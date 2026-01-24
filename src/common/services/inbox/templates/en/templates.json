@@ -1,0 +1,18 @@
+{
+    "workspace-invitation": {
+        "title": "Workspace invitation",
+        "body": "{{inviterName}} invited you to join {{workspaceName}}"
+    },
+    "verification": {
+        "title": "Verify your email",
+        "body": "Please verify your email address to activate your account"
+    },
+    "password-reset": {
+        "title": "Password reset requested",
+        "body": "A password reset was requested for your account"
+    },
+    "welcome": {
+        "title": "Welcome!",
+        "body": "Thank you for joining us"
+    }
+}

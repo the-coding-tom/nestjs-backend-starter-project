@@ -1,0 +1,65 @@
+---
+description: Airbnb style - objects, arrays, destructuring, spread
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Objects & Arrays
+
+## Object literal shorthand
+
+```typescript
+const name = 'John';
+
+// ✅ GOOD
+const user = { name, age: 30 };
+
+// ❌ BAD
+const user = { name: name, age: 30 };
+```
+
+## Destructuring
+
+```typescript
+// ✅ GOOD - object destructuring
+function getFullName({ firstName, lastName }: User) {
+  return `${firstName} ${lastName}`;
+}
+
+// ✅ GOOD - array destructuring
+const [first, second] = items;
+
+// ❌ BAD - direct property access when destructuring is cleaner
+function getFullName(user: User) {
+  return user.firstName + ' ' + user.lastName;
+}
+```
+
+## Spread operator
+
+```typescript
+// ✅ GOOD - copy objects
+const copy = { ...original };
+const merged = { ...defaults, ...options };
+
+// ✅ GOOD - copy arrays
+const itemsCopy = [...items];
+
+// ❌ BAD - Object.assign for copying
+const copy = Object.assign({}, original);
+```
+
+## Array methods over loops
+
+```typescript
+// ✅ GOOD
+const doubled = numbers.map(n => n * 2);
+const evens = numbers.filter(n => n % 2 === 0);
+const sum = numbers.reduce((acc, n) => acc + n, 0);
+
+// ❌ BAD - manual loops for transformations
+const doubled = [];
+for (let i = 0; i < numbers.length; i++) {
+  doubled.push(numbers[i] * 2);
+}
+```

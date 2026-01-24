@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "watchAssets": true,
+    "assets": [
+      {
+        "include": "i18n/**/*",
+        "watchAssets": true
+      },
+      {
+        "include": "shared-services/email-notification/templates/**/*",
+        "watchAssets": true
+      }
+    ]
+  }
+}
+

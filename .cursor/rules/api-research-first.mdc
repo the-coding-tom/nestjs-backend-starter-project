@@ -1,0 +1,43 @@
+---
+description: Always research external API documentation before planning integrations
+alwaysApply: true
+---
+
+# API Research First
+
+When integrating any external API or third-party service, **always research the official documentation first** before creating implementation plans.
+
+## Process
+
+1. **Search** for official documentation using web search
+2. **Fetch** and read the actual API reference pages
+3. **Verify** endpoint URLs, authentication methods, and payload structures
+4. **Then** create implementation plans based on accurate documentation
+
+## What to Research
+
+- API endpoint URLs and versions (e.g., `graph.facebook.com/v24.0`)
+- Authentication methods (Bearer tokens, API keys, OAuth)
+- Request/response payload structures
+- Webhook verification requirements
+- Signature validation methods (HMAC-SHA256, etc.)
+- Rate limits and error codes
+- Required vs optional parameters
+
+## Common External Services
+
+| Service | Documentation |
+|---------|---------------|
+| Meta/WhatsApp | developers.facebook.com/docs/whatsapp |
+| Stripe | docs.stripe.com |
+| Firebase/FCM | firebase.google.com/docs |
+| Brevo | developers.brevo.com |
+| Twilio | twilio.com/docs |
+
+## Why This Matters
+
+- API versions change (v21.0 → v24.0)
+- Authentication requirements differ by provider
+- Webhook signatures use different algorithms
+- Payload structures vary between services
+- Documentation assumptions lead to incorrect implementations

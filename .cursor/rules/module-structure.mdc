@@ -1,0 +1,44 @@
+---
+description: NestJS module organization and file structure standards
+alwaysApply: true
+---
+
+# Module Structure
+
+Each API module follows a strict file structure:
+
+```
+src/apis/module-name/
+├── module-name.module.ts      # NestJS module definition
+├── module-name.controller.ts  # HTTP route handlers
+├── module-name.service.ts     # Business logic
+├── module-name.validator.ts   # Input validation + business rules
+└── dto/
+    └── module-name.dto.ts     # Request/Response DTOs
+```
+
+## Dependency Flow
+
+```
+Controller → Service → Validator → Repository
+                   ↘ Repository
+```
+
+- **Controller**: Injects only the Service
+- **Service**: Injects Validator, Repositories, I18nService
+- **Validator**: Injects Repositories, I18nService
+
+## Creating a New Module
+
+1. Create folder in `src/apis/`
+2. Create `module.ts`, `controller.ts`, `service.ts`, `validator.ts`
+3. Create `dto/` folder with DTOs
+4. Create repository in `src/repositories/`
+5. Create entity types in `src/repositories/entities/`
+6. Add i18n keys in `src/i18n/en/` and `src/i18n/fr/`
+7. Register module in `app.module.ts`
+8. Configure middleware exclusions for public routes
+
+## Architecture Layers
+
+Controllers → Services → Validators → Repositories → Database (Prisma)

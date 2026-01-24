@@ -1,0 +1,87 @@
+---
+description: TypeScript best practices - types, interfaces, generics
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# TypeScript Types
+
+## Interface for objects, type for unions/intersections
+
+```typescript
+// ✅ GOOD - interface for object shapes
+interface User {
+  id: number;
+  name: string;
+}
+
+// ✅ GOOD - type for unions/intersections
+type Status = 'active' | 'inactive' | 'pending';
+type AdminUser = User & { permissions: string[] };
+```
+
+## Avoid `any` - use `unknown` for truly unknown types
+
+```typescript
+// ✅ GOOD
+function parse(input: unknown): User {
+  if (isUser(input)) return input;
+  throw new Error('Invalid input');
+}
+
+// ❌ BAD
+function parse(input: any): User {
+  return input;
+}
+```
+
+## Explicit return types for public APIs
+
+```typescript
+// ✅ GOOD - explicit return type
+async function getUser(id: number): Promise<User | null> {
+  return this.repository.findById(id);
+}
+
+// ⚠️ OK for private/simple functions - inferred
+const double = (n: number) => n * 2;
+```
+
+## Use readonly for immutable data
+
+```typescript
+// ✅ GOOD
+interface Config {
+  readonly apiUrl: string;
+  readonly timeout: number;
+}
+
+function process(items: readonly string[]) {}
+```
+
+## Prefer nullish coalescing
+
+```typescript
+// ✅ GOOD - ?? for null/undefined only
+const value = input ?? 'default';
+
+// ⚠️ CAREFUL - || treats 0, '', false as falsy
+const count = input || 10;  // 0 becomes 10!
+const count = input ?? 10;  // 0 stays 0
+```
+
+## Enums - use const enum or string unions
+
+```typescript
+// ✅ GOOD - string union (tree-shakeable)
+type Role = 'admin' | 'user' | 'guest';
+
+// ✅ OK - const enum (inlined at compile)
+const enum HttpMethod {
+  GET = 'GET',
+  POST = 'POST',
+}
+
+// ⚠️ AVOID - regular enum (generates runtime code)
+enum Status { Active, Inactive }
+```

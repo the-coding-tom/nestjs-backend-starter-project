@@ -1,0 +1,19 @@
+{
+  "created": "Workspace created successfully",
+  "retrieved": "Workspace retrieved successfully",
+  "updated": "Workspace updated successfully",
+  "deleted": "Workspace deleted successfully",
+  "membersRetrieved": "Workspace members retrieved successfully",
+  "memberInvited": "Member invited successfully",
+  "invitationAccepted": "Invitation accepted successfully",
+  "invitationResent": "Invitation resent successfully",
+  "memberRoleUpdated": "Member role updated successfully",
+  "memberRemoved": "Member removed successfully",
+  "email": {
+    "invitation": {
+      "subject": "Workspace invitation: {workspaceName}",
+      "title": "Workspace Invitation",
+      "message": "{inviterName} has invited you to join the workspace \"{workspaceName}\". Click the button below to accept the invitation."
+    }
+  }
+}

@@ -1,0 +1,70 @@
+---
+description: Airbnb style - ES modules, imports, exports
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Modules & Imports
+
+## Named exports over default
+
+```typescript
+// ✅ GOOD - named exports
+export const UserService = class {};
+export function createUser() {}
+export { UserRepository };
+
+// ⚠️ AVOID - default exports (harder to refactor)
+export default class UserService {}
+```
+
+## Import order
+
+```typescript
+// ✅ GOOD - grouped and ordered
+// 1. Node built-ins
+import { readFile } from 'fs';
+
+// 2. External packages
+import { Injectable } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+
+// 3. Internal modules (absolute paths)
+import { UserRepository } from '@/repositories/user.repository';
+
+// 4. Relative imports
+import { CreateUserDto } from './dto/user.dto';
+```
+
+## No duplicate imports
+
+```typescript
+// ✅ GOOD
+import { foo, bar, baz } from './module';
+
+// ❌ BAD
+import { foo } from './module';
+import { bar } from './module';
+```
+
+## No mutable exports
+
+```typescript
+// ❌ BAD - mutable binding
+export let count = 0;
+export function increment() { count++; }
+
+// ✅ GOOD - export functions that return values
+export function getCount() { return count; }
+```
+
+## Import from path once
+
+```typescript
+// ✅ GOOD
+import { Type, Injectable, HttpStatus } from '@nestjs/common';
+
+// ❌ BAD
+import { Type } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+```

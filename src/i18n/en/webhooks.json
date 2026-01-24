@@ -1,0 +1,11 @@
+{
+  "processedSuccessfully": "Webhook processed successfully",
+  "whatsapp": {
+    "invalidMode": "Invalid webhook mode",
+    "missingSignature": "Missing webhook signature",
+    "invalidSignatureFormat": "Invalid signature format",
+    "invalidSignature": "Invalid webhook signature",
+    "invalidObjectType": "Invalid webhook object type",
+    "missingEntries": "Missing webhook entries"
+  }
+}

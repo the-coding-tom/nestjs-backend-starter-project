@@ -1,0 +1,11 @@
+{
+  "retrieved": "Subscription retrieved successfully",
+  "checkoutCreated": "Checkout session created successfully",
+  "planUpgraded": "Plan upgraded successfully. Prorated invoice will be generated.",
+  "planDowngraded": "Plan downgraded successfully. Changes will take effect at the end of the billing period.",
+  "canceled": "Subscription auto-renewal turned off. Your subscription will remain active until the end of the current billing period.",
+  "portalCreated": "Portal session created successfully",
+  "invoicesRetrieved": "Invoices retrieved successfully",
+  "historyRetrieved": "Subscription history retrieved successfully"
+}
+

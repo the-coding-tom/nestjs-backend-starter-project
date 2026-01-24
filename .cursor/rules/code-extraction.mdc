@@ -1,0 +1,174 @@
+---
+description: Where to put extracted code when refactoring long service functions
+globs: src/**/*.service.ts
+alwaysApply: false
+---
+
+# Code Extraction Guide
+
+When service functions get too long, use this decision tree to determine where extracted code should go.
+
+## The Decision Tree
+
+```
+Is the extracted code PURE (no I/O, no side effects)?
+│
+├─ YES → Extract to helper or util
+│   └─ Does it understand domain concepts?
+│       ├─ YES → helpers/{name}.helper.ts
+│       └─ NO  → utils/{name}.util.ts
+│
+└─ NO (has I/O, side effects, dependencies)
+    │
+    ├─ Is it specific to this service only?
+    │   └─ YES → Private method (same file)
+    │
+    ├─ Is it primarily database operations?
+    │   └─ YES → Repository
+    │
+    └─ Is it complex (50+ lines) and reusable?
+        └─ YES → Separate service (common/services/ or new module)
+```
+
+## Quick Reference
+
+| Code Type | Has I/O? | Reusable? | Location |
+|-----------|----------|-----------|----------|
+| Generic calculation | No | Yes | `utils/` |
+| Domain-aware logic | No | Yes | `helpers/` |
+| Service-specific I/O | Yes | No | Private method |
+| Database queries | Yes | Yes | Repository |
+| Complex business I/O | Yes | Yes | Separate service |
+
+## Examples
+
+### Extract to Utils (Generic, Pure)
+
+```typescript
+// ❌ In service
+const slug = text.toLowerCase().replace(/\s+/g, '-');
+
+// ✅ In utils/slug.util.ts
+export function slugify(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, '-');
+}
+```
+
+### Extract to Helpers (Domain-Aware, Pure)
+
+```typescript
+// ❌ In service
+const canManage = workspace.ownerId === userId || membership?.role === 'MANAGER';
+
+// ✅ In helpers/workspace-permission.helper.ts
+export function canManageTeam(
+  workspace: Workspace,
+  userId: number,
+  membership: WorkspaceMember | undefined,
+): boolean {
+  return workspace.ownerId === userId || membership?.role === 'MANAGER';
+}
+```
+
+### Extract to Private Method (Service-Specific I/O)
+
+```typescript
+// ❌ Before: Long method
+async processOrder(orderId: string) {
+  // 80 lines of mixed code...
+  const cached = await this.cacheService.get(cacheKey);
+  // more code...
+  await this.emailService.send(...);
+  // more code...
+}
+
+// ✅ After: Clean orchestration + private methods
+async processOrder(orderId: string) {
+  const cached = await this.checkCache(orderId);
+  if (cached) return cached;
+  
+  const order = await this.orderRepo.findById(orderId);
+  const result = this.transformOrder(order);  // ← could be helper if pure
+  
+  await this.notifyCustomer(order);  // ← private method (I/O)
+  await this.updateCache(orderId, result);  // ← private method (I/O)
+  
+  return result;
+}
+
+private async checkCache(orderId: string): Promise<Order | null> {
+  return this.cacheService.get(`order:${orderId}`);
+}
+
+private async notifyCustomer(order: Order): Promise<void> {
+  await this.emailService.send({...});
+}
+
+private async updateCache(orderId: string, data: Order): Promise<void> {
+  await this.cacheService.set(`order:${orderId}`, data, 3600);
+}
+```
+
+### Extract to Repository (Database Queries)
+
+```typescript
+// ❌ In service
+const users = await this.prisma.user.findMany({
+  where: { status: 'ACTIVE', workspaceId },
+  include: { subscriptions: true },
+  orderBy: { createdAt: 'desc' },
+});
+
+// ✅ In repositories/user.repository.ts
+async findActiveByWorkspace(workspaceId: number): Promise<User[]> {
+  return this.prisma.user.findMany({
+    where: { status: 'ACTIVE', workspaceId },
+    include: { subscriptions: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+```
+
+### Extract to Separate Service (Complex, Reusable I/O)
+
+```typescript
+// ❌ In farmer.service.ts - 50+ lines of eligibility checking
+async enrollFarmer(farmerId: string) {
+  const creditScore = await this.creditService.getScore(farmerId);
+  const loanHistory = await this.prisma.loan.findMany(...);
+  // 40 more lines of eligibility logic...
+}
+
+// ✅ Create separate service
+// common/services/eligibility/eligibility.service.ts
+@Injectable()
+export class EligibilityService {
+  async checkLoanEligibility(farmerId: string): Promise<EligibilityResult> {
+    // All eligibility logic here
+  }
+}
+
+// farmer.service.ts - Now clean
+async enrollFarmer(farmerId: string) {
+  const eligibility = await this.eligibilityService.checkLoanEligibility(farmerId);
+  if (!eligibility.eligible) {
+    throw new BadRequestException(eligibility.reason);
+  }
+  // enrollment logic...
+}
+```
+
+## The Golden Rules
+
+1. **Pure functions never do I/O** - If it calls an API, database, or external service, it's not pure
+2. **Helpers understand business, utils don't** - `formatDate()` is a util, `isSubscriptionExpired()` is a helper
+3. **Private methods stay in the service file** - Don't create files for service-specific I/O
+4. **When in doubt, start with private method** - You can always extract later if needed
+
+## Signs Code Should Be Extracted
+
+- Method is 50+ lines
+- Same logic repeated in multiple places
+- Pure calculation mixed with I/O operations
+- Complex business rules embedded in orchestration code
+- Database queries with complex conditions

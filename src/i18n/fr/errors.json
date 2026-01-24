@@ -1,0 +1,27 @@
+{
+  "freePlanNotFound": "Plan FREE introuvable. Veuillez contacter le support.",
+  "deviceNotFound": "Appareil introuvable",
+  "deviceAccessDenied": "Accès refusé à cet appareil",
+  "duplicateWebhookEvent": "Événement webhook en double",
+  "planNotFound": "Plan introuvable",
+  "subscriptionNotFound": "Abonnement introuvable",
+  "subscriptionAlreadyCanceled": "L'abonnement est déjà annulé",
+  "priceNotAvailable": "Prix non disponible pour ce plan et cet intervalle de facturation",
+  "workspaceNotFound": "Espace de travail introuvable",
+  "workspaceMemberNotFound": "Membre de l'espace de travail introuvable",
+  "seatLimitExceeded": "Limite de membres de l'espace de travail dépassée pour ce plan",
+  "workspaceAccessDenied": "Accès refusé à cet espace de travail",
+  "workspaceLimitExceeded": "Limite d'espaces de travail dépassée",
+  "workspaceMemberAlreadyExists": "L'utilisateur est déjà membre de cet espace de travail",
+  "cannotInviteOwner": "Le propriétaire de l'espace de travail est déjà membre",
+  "cannotChangeOwnerRole": "Impossible de changer le rôle du propriétaire",
+  "cannotRemoveOwner": "Impossible de supprimer le propriétaire de l'espace de travail",
+  "invitationNotFound": "Invitation introuvable",
+  "invitationExpired": "Cette invitation a expiré",
+  "invitationAlreadyAccepted": "Cette invitation a déjà été acceptée",
+  "invitationEmailMismatch": "Cette invitation a été envoyée à une adresse e-mail différente",
+  "workspaceInvitationAlreadyExists": "Une invitation a déjà été envoyée à cette adresse e-mail",
+  "notificationNotFound": "Notification non trouvée",
+  "notificationAccessDenied": "Accès refusé à cette notification"
+}
+

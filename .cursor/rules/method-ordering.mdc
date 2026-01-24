@@ -1,0 +1,56 @@
+---
+description: Method ordering in classes - public first, private at bottom
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Method Ordering
+
+Organize class methods in a consistent order. Private methods must be at the bottom, not scattered throughout the file.
+
+## Order
+
+1. **Properties** - Class properties and readonly fields
+2. **Constructor** - Dependency injection
+3. **Public methods** - API/interface methods
+4. **Private methods** - Internal helper methods (always at bottom)
+
+## Example
+
+```typescript
+@Injectable()
+export class MyService {
+  // 1. Properties
+  private readonly logger = new Logger(MyService.name);
+
+  // 2. Constructor
+  constructor(
+    private readonly repository: MyRepository,
+  ) {}
+
+  // 3. Public methods
+  async create(data: CreateDto): Promise<Entity> {
+    const validated = this.validateData(data);
+    return this.saveToDatabase(validated);
+  }
+
+  async findAll(): Promise<Entity[]> {
+    return this.repository.findMany();
+  }
+
+  // 4. Private methods (always at the bottom, grouped together)
+  private validateData(data: CreateDto): ValidatedData {
+    // ...
+  }
+
+  private async saveToDatabase(data: ValidatedData): Promise<Entity> {
+    // ...
+  }
+}
+```
+
+## Key Points
+
+- Never scatter private methods between public methods
+- Group all private methods together at the end of the class
+- Within private methods, order by usage (called first → defined first)

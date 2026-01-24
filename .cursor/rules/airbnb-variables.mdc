@@ -1,0 +1,58 @@
+---
+description: Airbnb style - variable declarations, const/let, no var
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Variables & Declarations
+
+## Use const and let
+
+```typescript
+// ✅ GOOD - const for values that won't be reassigned
+const user = getUser();
+const items = [1, 2, 3];
+
+// ✅ GOOD - let only when reassignment is needed
+let count = 0;
+count += 1;
+
+// ❌ BAD - never use var
+var name = 'test';
+```
+
+## One declaration per variable
+
+```typescript
+// ✅ GOOD
+const foo = 1;
+const bar = 2;
+
+// ❌ BAD
+const foo = 1, bar = 2;
+```
+
+## Group const and let
+
+```typescript
+// ✅ GOOD - group const, then let
+const userId = 1;
+const name = 'John';
+let isActive = false;
+let count = 0;
+
+// ❌ BAD - mixed declarations
+let count = 0;
+const userId = 1;
+let isActive = false;
+```
+
+## No unused variables
+
+```typescript
+// ❌ BAD - unused variable
+const unused = 'never used';
+
+// ✅ GOOD - prefix with _ if intentionally unused
+const [first, _second, third] = array;
+```

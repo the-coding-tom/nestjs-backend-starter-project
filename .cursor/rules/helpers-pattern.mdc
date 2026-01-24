@@ -1,0 +1,308 @@
+---
+description: Domain-aware pure helper functions in helpers folder
+globs: src/helpers/**/*.ts
+alwaysApply: false
+---
+
+# Helpers Pattern
+
+Helpers are pure functions that understand your business domain but remain stateless and side-effect free.
+
+## Helpers vs Utils vs Services
+
+| Aspect | Utils | Helpers | Services |
+|--------|-------|---------|----------|
+| Domain knowledge | None | Yes | Yes |
+| Pure functions | Yes | Yes | No |
+| Does I/O | No | No | Yes |
+| Reusable anywhere | Yes (npm-able) | This project only | This project only |
+| Location | `utils/` | `helpers/` | `common/services/` |
+
+## What Belongs in Helpers
+
+```typescript
+// ✅ Workspace permission checks (pure, domain-aware)
+function isWorkspaceOwner(workspace: Workspace, userId: number): boolean {
+  return workspace.ownerId === userId;
+}
+
+function canManageTeam(
+  workspace: Workspace,
+  userId: number,
+  membership: WorkspaceMember | undefined,
+): boolean {
+  return isWorkspaceOwner(workspace, userId) || membership?.role === 'MANAGER';
+}
+
+// ✅ Feature access checks (pure, domain-aware)
+function hasFeatureAccess(features: PlanFeatures, feature: string): boolean {
+  const featureMap: Record<string, boolean> = {
+    apiAccess: features.apiAccess,
+    prioritySupport: features.prioritySupport,
+    customDomain: features.customDomain,
+  };
+  return featureMap[feature] || false;
+}
+
+// ✅ Subscription calculations (pure, domain-aware)
+function isSubscriptionActive(subscription: Subscription): boolean {
+  return subscription.status === 'ACTIVE' && 
+         new Date(subscription.currentPeriodEnd) > new Date();
+}
+
+function calculateProrationAmount(
+  currentPrice: number,
+  newPrice: number,
+  daysRemaining: number,
+  totalDays: number,
+): number {
+  const dailyDifference = (newPrice - currentPrice) / totalDays;
+  return dailyDifference * daysRemaining;
+}
+
+// ✅ MFA helpers (pure transformations)
+function formatBackupCode(code: string): string {
+  return code.match(/.{1,4}/g)?.join('-') || code;
+}
+
+// ✅ Notification formatting (pure, domain-aware)
+function formatNotificationTitle(type: string, data: object): string {
+  const templates: Record<string, string> = {
+    MEMBER_JOINED: `${data.memberName} joined ${data.workspaceName}`,
+    SUBSCRIPTION_EXPIRING: `Your subscription expires in ${data.days} days`,
+  };
+  return templates[type] || 'Notification';
+}
+```
+
+## What Does NOT Belong in Helpers
+
+```typescript
+// ❌ Does I/O (database query) - belongs in service
+async function getWorkspaceSubscription(workspaceId: number): Promise<Subscription> {
+  return prisma.subscription.findFirst({ where: { workspaceId } });
+}
+
+// ❌ Does I/O (API call) - belongs in service
+async function sendPushNotification(token: string, message: string): Promise<void> {
+  await fcm.send({ token, notification: { body: message } });
+}
+
+// ❌ Generic, no domain knowledge - belongs in utils
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, '-');
+}
+
+// ❌ Maintains state - not a pure function
+let cache = new Map();
+function getCachedPermission(userId: number): boolean {
+  return cache.get(userId);
+}
+```
+
+## File Organization
+
+```
+helpers/
+├── workspace-permission.helper.ts   # Functions only
+├── plan-features.helper.ts          # Functions + internal types
+├── response.helper.ts               # Functions only
+├── error.helper.ts                  # Functions only
+└── i18n.helper.ts                   # Functions only
+```
+
+## Types in Helper Files
+
+### Rule: Internal Types Only
+
+Types CAN be in helper files **if and only if**:
+1. Used exclusively in that ONE helper file
+2. **NOT exported**
+3. Implementation details only
+
+```typescript
+// ✅ GOOD - Internal types, not exported
+// helpers/plan-features.helper.ts
+
+// Internal types - only used within this helper
+interface PlanFeatures {
+  apiAccess: boolean;
+  prioritySupport: boolean;
+}
+
+interface PlanLimits {
+  maxSeats: number;
+  maxWorkspaces: number;
+}
+
+export function extractPlanFeatures(plan: unknown): PlanFeatures {
+  // ...
+}
+
+export function extractPlanLimits(plan: unknown): PlanLimits {
+  // ...
+}
+```
+
+### Types That Need to Be Shared
+
+If a type is needed outside the helper file, put it in `src/types/` or `common/types/`:
+
+```typescript
+// ❌ BAD - Exporting types from helper
+// helpers/some.helper.ts
+export interface SharedType { }  // Don't export!
+
+// ✅ GOOD - Shared types in dedicated location
+// common/types/domain.types.ts
+export interface SharedType { }
+
+// helpers/some.helper.ts
+import { SharedType } from '../common/types/domain.types';
+```
+
+### Where Shared Types Go
+
+| Type Category | Location |
+|--------------|----------|
+| HTTP types | `common/types/request.types.ts`, `common/types/response.types.ts` |
+| Domain types | `common/types/*.types.ts` |
+| Module-specific | `apis/module/dto/*.dto.ts` |
+
+### No Re-Exporting Types
+
+Do not re-export types from helper files. Consumers import types from their source.
+
+```typescript
+// ❌ BAD - Re-exporting types
+export { ServiceErrorResponse } from '../common/types/response.types';
+
+// ✅ GOOD - Consumers import directly
+// some.service.ts
+import { generateSuccessResponse } from '../../helpers/response.helper';
+import { ServiceErrorResponse } from '../../common/types/response.types';
+```
+
+## Writing Helpers
+
+### Use Named Exports
+
+```typescript
+// ✅ Good
+export function isWorkspaceOwner(workspace: Workspace, userId: number): boolean { }
+export function canManageTeam(workspace: Workspace, membership: Member): boolean { }
+
+// ❌ Bad
+export default { isWorkspaceOwner, canManageTeam };
+```
+
+### Keep Pure - No I/O
+
+```typescript
+// ❌ Bad - fetches from database
+export async function hasFeatureAccess(workspaceId: number, feature: string): Promise<boolean> {
+  const subscription = await prisma.subscription.findFirst({ ... });
+  return subscription.features[feature];
+}
+
+// ✅ Good - pure function, caller passes data
+export function hasFeatureAccess(features: PlanFeatures, feature: string): boolean {
+  return features[feature] || false;
+}
+```
+
+### Accept Data, Don't Fetch
+
+```typescript
+// ❌ Bad - helper fetches its own data
+export async function canManageWorkspace(workspaceId: number, userId: number): Promise<boolean> {
+  const workspace = await prisma.workspace.findUnique({ ... });
+  const membership = await prisma.workspaceMember.findFirst({ ... });
+  return workspace.ownerId === userId || membership?.role === 'MANAGER';
+}
+
+// ✅ Good - caller passes all needed data
+export function canManageWorkspace(
+  workspace: Workspace,
+  userId: number,
+  membership: WorkspaceMember | undefined,
+): boolean {
+  return workspace.ownerId === userId || membership?.role === 'MANAGER';
+}
+```
+
+### Use Domain Types
+
+```typescript
+// ❌ Bad - generic types hide domain
+export function checkAccess(entity: any, userId: any, role: any): boolean { }
+
+// ✅ Good - explicit domain types
+export function canManageTeam(
+  workspace: Workspace,
+  userId: number,
+  membership: WorkspaceMember | undefined,
+): boolean { }
+```
+
+## Helpers May Use Utils
+
+Helpers can compose utils for their logic:
+
+```typescript
+import { formatDate, addDays } from '../utils/date.util';
+
+export function formatSubscriptionExpiry(subscription: Subscription): string {
+  const expiryDate = new Date(subscription.currentPeriodEnd);
+  return formatDate(expiryDate, 'MMMM d, yyyy');
+}
+
+export function getTrialEndDate(startDate: Date, trialDays: number): Date {
+  return addDays(startDate, trialDays);
+}
+```
+
+## Testing Helpers
+
+Helpers are easy to test - pass in data, check output:
+
+```typescript
+describe('workspace-permission.helper', () => {
+  describe('isWorkspaceOwner', () => {
+    it('should return true for owner', () => {
+      const workspace = { id: 1, ownerId: 100 } as Workspace;
+      expect(isWorkspaceOwner(workspace, 100)).toBe(true);
+    });
+
+    it('should return false for non-owner', () => {
+      const workspace = { id: 1, ownerId: 100 } as Workspace;
+      expect(isWorkspaceOwner(workspace, 200)).toBe(false);
+    });
+  });
+
+  describe('canManageTeam', () => {
+    it('should allow owner to manage team', () => {
+      const workspace = { id: 1, ownerId: 100 } as Workspace;
+      expect(canManageTeam(workspace, 100, undefined)).toBe(true);
+    });
+
+    it('should allow manager to manage team', () => {
+      const workspace = { id: 1, ownerId: 100 } as Workspace;
+      const membership = { role: 'MANAGER' } as WorkspaceMember;
+      expect(canManageTeam(workspace, 200, membership)).toBe(true);
+    });
+
+    it('should deny member from managing team', () => {
+      const workspace = { id: 1, ownerId: 100 } as Workspace;
+      const membership = { role: 'MEMBER' } as WorkspaceMember;
+      expect(canManageTeam(workspace, 200, membership)).toBe(false);
+    });
+  });
+});
+```
+
+## Golden Rule
+
+**Helpers understand your business but don't talk to the outside world.**
+
+They're the domain-aware calculation layer between your services (I/O) and utils (generic).

@@ -1,0 +1,190 @@
+---
+description: Complete project folder structure and what belongs where
+alwaysApply: true
+---
+
+# Project Structure
+
+## Root Folder Organization
+
+```
+src/
+├── apis/                  # Feature modules (HTTP endpoints)
+├── common/                # Shared infrastructure code
+│   ├── constants/         # Application constants
+│   ├── entities/          # Shared type definitions
+│   ├── enums/             # Error codes, statuses, types
+│   ├── interceptors/      # Global interceptors
+│   ├── middlewares/       # Auth, language, context
+│   ├── services/          # Shared services (I/O, integrations)
+│   └── types/             # TypeScript type definitions
+├── config/                # Application configuration
+├── crons/                 # Scheduled tasks (CronJobs)
+├── helpers/               # Domain-aware pure functions
+├── i18n/                  # Translation files
+├── queues/                # Background job producers & processors
+├── repositories/          # Data access layer (Prisma)
+├── seeds/                 # Database seeders
+└── utils/                 # Pure, generic utility functions
+```
+
+## The Three-Layer Distinction
+
+### `utils/` - Pure Generic Utilities
+**Framework-agnostic, could be npm packages.**
+
+Characteristics:
+- Zero business logic or domain knowledge
+- Pure functions (same input → same output)
+- No I/O operations (no API calls, no database)
+- No state
+- Could work in ANY codebase
+
+```typescript
+// ✅ Good utils
+function slugify(text: string): string
+function chunk<T>(array: T[], size: number): T[][]
+function formatDate(date: Date, format: string): string
+function generateRandomString(length: number): string
+function hashPassword(password: string): Promise<string>
+
+// ❌ NOT utils (do I/O or have domain knowledge)
+function sendEmail(to: string, subject: string): Promise<void>
+function calculateFarmerEligibility(farmer: Farmer): boolean
+```
+
+### `helpers/` - Domain-Aware Pure Functions
+**Understand your business but remain pure.**
+
+Characteristics:
+- Use domain terminology and concepts
+- Still pure functions (no I/O, no state)
+- Project-specific logic
+- May use utils internally
+
+```typescript
+// ✅ Good helpers
+function isWorkspaceOwner(workspace: Workspace, userId: number): boolean
+function canManageTeam(workspace: Workspace, membership: Member): boolean
+function hasFeatureAccess(features: PlanFeatures, feature: string): boolean
+function formatNotificationMessage(type: string, data: object): string
+
+// ❌ NOT helpers (do I/O)
+function getWorkspaceSubscription(workspaceId: number): Promise<Subscription>
+function sendPushNotification(token: string, message: string): Promise<void>
+```
+
+### `common/services/` - Shared Services
+**Infrastructure, integrations, and I/O operations.**
+
+Characteristics:
+- Perform I/O (API calls, database, queues)
+- May maintain state (singletons, connections)
+- Used by multiple modules
+- Feature-based folder organization
+
+```typescript
+// ✅ Good shared services
+EmailService       // Sends emails via Brevo/SendGrid
+PushService        // Sends push notifications via FCM
+StripeService      // Stripe API operations
+OAuthService       // OAuth provider integrations
+CacheService       // Redis caching operations
+```
+
+## Feature-Based Service Structure
+
+Each shared service with DTOs, helpers, or templates gets its own folder:
+
+```
+common/services/
+├── email/
+│   ├── email.service.ts
+│   ├── email.module.ts
+│   ├── dto/
+│   │   └── send-email.dto.ts
+│   ├── helpers/
+│   │   └── email-template.helper.ts
+│   └── templates/
+│       ├── en/
+│       └── fr/
+├── push/
+│   ├── push.service.ts
+│   ├── push.module.ts
+│   ├── dto/
+│   ├── helpers/
+│   │   ├── push-template.helper.ts
+│   │   └── fcm.helper.ts
+│   └── templates/
+├── stripe/
+│   ├── stripe.service.ts
+│   ├── stripe.module.ts
+│   └── helpers/
+│       └── stripe-calculation.helper.ts
+└── oauth/
+    ├── oauth.service.ts
+    └── helpers/
+        └── token-parser.helper.ts
+```
+
+## Other Folders
+
+### `apis/` - Feature Modules
+HTTP-exposed features. See `module-structure` rule for details.
+
+### `common/` - Shared Infrastructure Code
+Cross-cutting concerns and shared services:
+- `constants/` - Queue names, time constants
+- `entities/` - Shared type definitions
+- `enums/` - Error codes, statuses
+- `interceptors/` - Global interceptors
+- `middlewares/` - Auth, language, workspace context
+- `services/` - Shared services (integrations, notifications)
+- `types/` - Request/response types
+
+### `helpers/` - Domain-Aware Pure Functions
+Business logic without I/O:
+- Workspace permissions
+- MFA setup
+- Feature access checks
+
+### `repositories/` - Data Access Layer
+Prisma database operations only. No business logic.
+
+### `queues/` - Background Jobs
+Bull queue producers and processors.
+
+### `crons/` - Scheduled Tasks
+Time-based background jobs using `@nestjs/schedule`.
+
+## Decision Guide
+
+| Need to add...                    | Put it in...                          |
+|-----------------------------------|---------------------------------------|
+| Pure generic function             | `utils/{name}.util.ts`                |
+| Domain-aware pure function        | `helpers/{name}.helper.ts`            |
+| Service with I/O (API, DB, queue) | `common/services/{name}/`             |
+| New API endpoint                  | `apis/{module-name}/`                 |
+| Database query                    | `repositories/{entity}.repository.ts` |
+| Shared type/enum                  | `common/entities/` or `common/enums/` |
+| Background job processor          | `queues/processors/`                  |
+| Scheduled task                    | `crons/processes/`                    |
+| Translation string                | `i18n/{lang}/{module}.json`           |
+
+## The "Where Does This Go?" Test
+
+1. **Does it do I/O (API calls, database, queue, file system)?**
+   - YES → `common/services/` (shared) or domain service (module-specific)
+   - NO → Continue to #2
+
+2. **Does it understand domain concepts (workspace, subscription, notification)?**
+   - YES → `helpers/`
+   - NO → `utils/`
+
+3. **Is it used by multiple modules?**
+   - YES → Root-level `helpers/` or `common/services/`
+   - NO → Co-locate with its consumer
+
+## Co-location Principle
+
+**Single-use code belongs with its consumer.** Only promote to shared folders when genuinely needed by multiple modules.

@@ -1,0 +1,57 @@
+---
+description: NestJS validator patterns - Joi schemas with i18n and business rules
+globs: src/apis/**/*.validator.ts
+alwaysApply: false
+---
+
+# Validator Pattern
+
+Validators combine Joi schema validation with business rule enforcement.
+
+```typescript
+@Injectable()
+export class ResourceValidator {
+  constructor(
+    private readonly repository: ResourceRepository,
+    private readonly i18n: I18nService,
+  ) {}
+
+  async validateCreate(data: CreateDto & { language: string }): Promise<{
+    dto: CreateDto;
+  }> {
+    // 1. Define Joi schema with i18n messages
+    const schema = Joi.object({
+      field: Joi.string()
+        .required()
+        .messages({
+          'any.required': translate(this.i18n, 'validation.field.required', data.language),
+        }),
+      language: Joi.string()
+        .valid(...config.i18n.supportedLanguages)
+        .default(config.defaultLanguage),
+    });
+
+    // 2. Validate schema
+    const error = validateJoiSchema(schema, data);
+    if (error) {
+      throwError(error, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR);
+    }
+
+    // 3. Business rule validation
+    const existing = await this.repository.findByField(data.field);
+    if (existing) {
+      const message = translate(this.i18n, 'validation.field.exists', data.language);
+      throwError(message, HttpStatus.CONFLICT, ErrorCode.RESOURCE_EXISTS);
+    }
+
+    return { dto: data };
+  }
+}
+```
+
+## Rules
+
+- Always include `language` field in validation data
+- Use `throwError()` utility for consistent error throwing
+- Translate ALL error messages via `translate()`
+- Return validated DTO and any fetched entities

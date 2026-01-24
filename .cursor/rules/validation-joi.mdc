@@ -1,0 +1,47 @@
+---
+description: Always use Joi for request/payload validation
+globs: src/**/*.validator.ts
+alwaysApply: false
+---
+
+# Validation with Joi
+
+Always use Joi schemas for validating request bodies, query parameters, and webhook payloads. Never use manual if/else checks for validation.
+
+## Pattern
+
+```typescript
+// ❌ BAD - Manual validation
+if (!mode || !token || !challenge) {
+  throwError(
+    translate(this.i18n, 'validation.missingRequiredFields', language),
+    HttpStatus.BAD_REQUEST,
+    ErrorCode.VALIDATION_ERROR,
+  );
+}
+
+// ✅ GOOD - Joi schema validation
+const schema = Joi.object({
+  'hub.mode': Joi.string().valid('subscribe').required().messages({
+    'any.required': translate(this.i18n, 'validation.modeRequired', language),
+    'any.only': translate(this.i18n, 'validation.invalidMode', language),
+  }),
+  'hub.verify_token': Joi.string().required().messages({
+    'any.required': translate(this.i18n, 'validation.tokenRequired', language),
+  }),
+  'hub.challenge': Joi.string().required().messages({
+    'any.required': translate(this.i18n, 'validation.challengeRequired', language),
+  }),
+});
+
+const error = validateJoiSchema(schema, query);
+if (error) throwError(error, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR);
+```
+
+## Key Points
+
+- Use `validateJoiSchema()` utility from `src/utils/joi.util.ts`
+- Define custom error messages using `.messages()` with i18n translations
+- Use `.valid()` for enum-like values
+- Use `.unknown(true)` when payload may contain extra fields
+- Keep all validation logic in `.validator.ts` files

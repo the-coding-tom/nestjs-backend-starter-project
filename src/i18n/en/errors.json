@@ -1,0 +1,27 @@
+{
+  "freePlanNotFound": "FREE plan not found. Please contact support.",
+  "deviceNotFound": "Device not found",
+  "deviceAccessDenied": "Access denied to this device",
+  "duplicateWebhookEvent": "Duplicate webhook event",
+  "planNotFound": "Plan not found",
+  "subscriptionNotFound": "Subscription not found",
+  "subscriptionAlreadyCanceled": "Subscription is already canceled",
+  "priceNotAvailable": "Price not available for this plan and billing interval",
+  "workspaceNotFound": "Workspace not found",
+  "workspaceMemberNotFound": "Workspace member not found",
+  "seatLimitExceeded": "Workspace member limit exceeded for this plan",
+  "workspaceAccessDenied": "Access denied to this workspace",
+  "workspaceLimitExceeded": "Workspace limit exceeded",
+  "workspaceMemberAlreadyExists": "User is already a member of this workspace",
+  "cannotInviteOwner": "Workspace owner is already a member",
+  "cannotChangeOwnerRole": "Cannot change owner role",
+  "cannotRemoveOwner": "Cannot remove workspace owner",
+  "invitationNotFound": "Invitation not found",
+  "invitationExpired": "This invitation has expired",
+  "invitationAlreadyAccepted": "This invitation has already been accepted",
+  "invitationEmailMismatch": "This invitation was sent to a different email address",
+  "workspaceInvitationAlreadyExists": "An invitation has already been sent to this email address",
+  "notificationNotFound": "Notification not found",
+  "notificationAccessDenied": "Access denied to this notification"
+}
+

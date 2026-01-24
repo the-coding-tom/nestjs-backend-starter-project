@@ -1,0 +1,61 @@
+---
+description: Bull queue processor patterns for background jobs
+globs: src/queues/**/*.ts
+alwaysApply: false
+---
+
+# Queue & Background Jobs
+
+## Queue Names
+
+Define in `common/constants/queues.constant.ts`:
+
+```typescript
+export const EMAIL_NOTIFICATION_QUEUE = 'email-notification';
+export const PUSH_NOTIFICATION_QUEUE = 'push-notification';
+export const STRIPE_CHECKOUT_QUEUE = 'stripe-checkout';
+```
+
+## Processor Pattern
+
+```typescript
+@Processor(QUEUE_NAME)
+export class QueueProcessor {
+  @Process()
+  async process(job: Job<JobData>): Promise<void> {
+    const { data } = job;
+    // Process job
+  }
+}
+```
+
+## Adding Jobs
+
+```typescript
+await this.queue.add(jobData, {
+  attempts: 3,
+  backoff: {
+    type: 'exponential',
+    delay: 2000,
+  },
+  removeOnComplete: true,
+  removeOnFail: false,
+});
+```
+
+## Registration
+
+1. **Producers**: Register in `queue-producers.module.ts`
+2. **Processors**: Register in `queue-processors.module.ts`
+
+```typescript
+// queue-producers.module.ts
+BullModule.registerQueue({ name: QUEUE_NAME })
+
+// queue-processors.module.ts
+providers: [QueueProcessor]
+```
+
+## Error Handling
+
+Use retry with exponential backoff. Log failures for monitoring.

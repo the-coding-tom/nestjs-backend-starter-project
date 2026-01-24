@@ -1,0 +1,60 @@
+---
+description: Internationalization patterns - translate all user-facing messages
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Internationalization (i18n)
+
+All user-facing messages MUST be translated.
+
+## Usage
+
+```typescript
+import { translate } from '../../helpers/i18n.helper';
+
+// ✅ GOOD - Translated message
+message: translate(this.i18n, 'auth.login.success', request.language)
+
+// ✅ GOOD - With variables
+message: translate(this.i18n, 'auth.welcome', request.language, { name: user.name })
+
+// ❌ BAD - Hardcoded message
+message: 'Login successful'
+```
+
+## Translation Files
+
+Location: `src/i18n/{language}/{domain}.json`
+
+```
+i18n/
+├── en/
+│   ├── auth.json
+│   ├── common.json
+│   ├── validation.json
+│   └── errors.json
+└── fr/
+    ├── auth.json
+    └── ...
+```
+
+## Validation Messages
+
+```typescript
+const schema = Joi.object({
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'any.required': translate(this.i18n, 'validation.email.required', data.language),
+      'string.email': translate(this.i18n, 'validation.email.invalid', data.language),
+    }),
+});
+```
+
+## Rules
+
+- Never hardcode user-facing strings
+- Always pass `language` from request context
+- Add new keys to both `en/` and `fr/` folders

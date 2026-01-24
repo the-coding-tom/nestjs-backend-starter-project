@@ -1,0 +1,158 @@
+---
+description: NestJS service layer patterns - try/catch, validation, response format
+globs: src/apis/**/*.service.ts
+alwaysApply: false
+---
+
+# Service Layer Pattern
+
+Every service method MUST follow this structure:
+
+```typescript
+async methodName(dto: SomeDto, request: ApiRequest): Promise<any> {
+  try {
+    // 1. Validate through validator
+    const { dto: validatedDto, ...entities } = await this.validator.validateMethod({
+      ...dto,
+      language: request.language,
+    });
+
+    // 2. Business logic / repository operations
+    const result = await this.repository.someOperation(validatedDto);
+
+    // 3. Return standardized success response
+    return generateSuccessResponse({
+      statusCode: HttpStatus.OK,
+      message: translate(this.i18n, 'resource.action.success', request.language),
+      data: result,
+    });
+  } catch (error) {
+    // 4. Log error and return standardized error response
+    LoggerService.error(`Context description: ${error}`);
+    return generateErrorResponse(error);
+  }
+}
+```
+
+## Required Imports
+
+```typescript
+import { Injectable, HttpStatus } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
+import { generateSuccessResponse, generateErrorResponse } from '../../helpers/response.helper';
+import { LoggerService } from '../../common/services/logger/logger.service';
+import { translate } from '../../helpers/i18n.helper';
+import { ApiRequest } from '../../common/types/request.types';
+```
+
+## Rules
+
+- Always wrap in `try/catch` with error logging and `generateErrorResponse()`
+- Always validate through dedicated validator class
+- Always use `generateSuccessResponse()` for success
+- Always log errors with `LoggerService.error()` before returning error response
+
+## Private Methods vs Helpers vs Separate Services
+
+Use this decision matrix for code extraction:
+
+| Situation | Used Once | Used Multiple Times |
+|-----------|-----------|---------------------|
+| **Pure (no I/O)** | Private method OR Helper | **Helper** (must share) |
+| **Has I/O** | **Private method** | **Separate Service** |
+| **Complex (50+ lines)** | **Separate Service** | **Separate Service** |
+
+### Private Methods (Single-File Scope)
+
+Use private methods when:
+- Code is used ONLY within this one service
+- Code does I/O (database, API, cache, queue)
+- Code is < 30 lines
+- Code uses injected dependencies
+
+```typescript
+@Injectable()
+export class WeatherService {
+  async getForecast(farmId: string): Promise<WeatherForecast> {
+    const cached = await this.checkCache(farmId);  // ← Private (I/O)
+    if (cached) return cached;
+    
+    const farm = await this.getFarm(farmId);       // ← Private (I/O)
+    return this.fetchWeatherData(farm);            // ← Private (I/O)
+  }
+
+  // Private methods - I/O, used only in this file
+  private async checkCache(farmId: string): Promise<WeatherForecast | null> {
+    return this.cacheService.get(`weather:${farmId}`);
+  }
+  
+  private async getFarm(farmId: string): Promise<Farm> {
+    return this.prisma.farm.findUnique({ where: { id: farmId } });
+  }
+  
+  private async fetchWeatherData(farm: Farm): Promise<WeatherForecast> {
+    return this.weatherApi.fetch(farm.latitude, farm.longitude);
+  }
+}
+```
+
+### Helpers (Pure Functions, Reusable)
+
+Use helpers when:
+- Code is pure (no I/O)
+- Code could be reused (even if only used once now)
+- Code is domain logic worth testing independently
+
+```typescript
+// In service - call helper for pure transformations
+import { transformWeatherData } from '@/helpers/weather-transform.helper';
+
+async getForecast(farmId: string): Promise<WeatherForecast> {
+  const rawData = await this.fetchWeatherData(farm);
+  return transformWeatherData(rawData);  // ← Helper (pure)
+}
+```
+
+### When to Extract to Separate Service
+
+Extract to `common/services/` **ONLY** when:
+- **Multiple services need the same I/O operations** (not just one!)
+- Private method exceeds 50 lines AND is reusable
+- Logic is complex enough to warrant its own module
+
+**Do NOT create a common service for single-use code.** Keep it as a private method until a second consumer needs it.
+
+```typescript
+// ❌ Private method too complex
+private async checkLoanEligibility(farmerId: string): Promise<boolean> {
+  // 60 lines of complex logic...
+}
+
+// ✅ Extract to separate service
+@Injectable()
+export class EligibilityService {
+  async checkLoanEligibility(farmerId: string): Promise<EligibilityResult> {
+    // Complex logic in dedicated service
+  }
+}
+```
+
+### What Helpers Should NEVER Do
+
+```typescript
+// ❌ Helpers must NEVER do I/O
+export async function getWorkspaceSubscription(id: number) {
+  return prisma.subscription.findFirst({ ... });  // I/O!
+}
+
+// ❌ Helpers must NEVER log
+export function handleError(error: unknown) {
+  logger.error(error);  // I/O!
+  return formatError(error);
+}
+
+// ❌ Helpers must NEVER use injected services
+export function processData(data: Data, cacheService: CacheService) {
+  return cacheService.get(data.id);  // Needs DI!
+}
+```

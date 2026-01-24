@@ -1,0 +1,104 @@
+{
+  "email": {
+    "required": "Email is required",
+    "invalid": "Please provide a valid email address",
+    "exists": "Email already registered"
+  },
+  "password": {
+    "required": "Password is required"
+  },
+  "name": {
+    "required": "Name is required",
+    "min": "Name must be at least 2 characters long"
+  },
+  "language": {
+    "invalid": "Invalid language code"
+  },
+  "invalidCredentials": "Invalid email or password",
+  "emailNotVerified": "Please verify your email before logging in",
+  "accountInactive": "Account is not active",
+  "oauthError": "OAuth authentication error",
+  "missingCode": "Authorization code is required",
+  "tokenExpired": "Token has expired",
+  "tokenInvalid": "Invalid token",
+  "invalidToken": "Invalid token",
+  "expiredToken": "Token has expired",
+  "token": {
+    "required": "Token is required",
+    "invalid": "Invalid token"
+  },
+  "invalidRefreshToken": "Invalid refresh token",
+  "expiredRefreshToken": "Refresh token has expired",
+  "invalidTokenType": "Invalid token type",
+  "userNotFound": "User not found",
+  "sessionNotFound": "Session not found",
+  "verificationTokenNotFound": "Verification token not found",
+  "verificationTokenExpired": "Verification token has expired",
+  "emailAlreadyVerified": "Email is already verified",
+  "passwordTooWeak": "Password is too weak",
+  "emailExists": "Email already registered",
+  "totpNotEnabled": "Two-factor authentication is not enabled",
+  "totpAlreadyEnabled": "Two-factor authentication is already enabled",
+  "totpSetupNotFound": "TOTP setup not found or expired",
+  "invalidTotpCode": "Invalid TOTP code",
+  "invalidBackupCode": "Invalid backup code",
+  "backupCodeNotFound": "Backup code not found or already used",
+  "mfaSessionNotFound": "MFA verification session not found",
+  "mfaSessionExpired": "MFA verification session has expired",
+  "planSlugRequired": "Plan slug is required",
+  "billingIntervalRequired": "Billing interval is required",
+  "billingIntervalInvalid": "Billing interval must be MONTHLY or YEARLY",
+  "planTypeInvalid": "Plan type must be FREE or PAID",
+  "price": {
+    "freeMustBeZero": "FREE plans must have price = 0",
+    "paidMustHavePrice": "PAID plans must have at least one price greater than 0"
+  },
+  "invalidWorkspaceId": "Workspace ID must be a valid positive integer",
+  "invalidUserId": "User ID must be a valid positive integer",
+  "workspaceId": {
+    "required": "Workspace ID is required"
+  },
+  "userId": {
+    "required": "User ID is required"
+  },
+  "role": {
+    "invalid": "Invalid role",
+    "required": "Role is required"
+  },
+  "url": {
+    "invalid": "Please provide a valid URL",
+    "required": "URL is required"
+  },
+  "fcmToken": {
+    "required": "FCM token is required"
+  },
+  "platform": {
+    "required": "Platform is required",
+    "invalid": "Platform must be web, android, or ios"
+  },
+  "limit": {
+    "invalid": "Limit must be a valid number",
+    "min": "Limit must be at least 1",
+    "max": "Limit cannot exceed 100"
+  },
+  "offset": {
+    "invalid": "Offset must be a valid number",
+    "min": "Offset must be at least 0"
+  },
+  "invalidNotificationId": "Notification ID must be a valid positive integer",
+  "notificationId": {
+    "required": "Notification ID is required"
+  },
+  "invalidEventType": "Invalid webhook event type",
+  "eventTypeRequired": "Event type is required",
+  "invalidId": "Invalid ID",
+  "idRequired": "ID is required",
+  "dateRequired": "Date is required",
+  "timestampRequired": "Timestamp is required",
+  "messageIdRequired": "Message ID is required",
+  "eventTimestampRequired": "Event timestamp is required",
+  "requestBodyRequired": "Request body is required",
+  "stripeSignatureRequired": "Stripe signature is required",
+  "invalidWebhookSignature": "Invalid webhook signature"
+}
+

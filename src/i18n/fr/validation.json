@@ -1,0 +1,104 @@
+{
+  "email": {
+    "required": "L'email est requis",
+    "invalid": "Veuillez fournir une adresse email valide",
+    "exists": "L'email est déjà enregistré"
+  },
+  "password": {
+    "required": "Le mot de passe est requis"
+  },
+  "name": {
+    "required": "Le nom est requis",
+    "min": "Le nom doit contenir au moins 2 caractères"
+  },
+  "language": {
+    "invalid": "Code de langue invalide"
+  },
+  "invalidCredentials": "Email ou mot de passe invalide",
+  "emailNotVerified": "Veuillez vérifier votre email avant de vous connecter",
+  "accountInactive": "Le compte n'est pas actif",
+  "oauthError": "Erreur d'authentification OAuth",
+  "missingCode": "Le code d'autorisation est requis",
+  "tokenExpired": "Le token a expiré",
+  "tokenInvalid": "Token invalide",
+  "invalidToken": "Token invalide",
+  "expiredToken": "Le token a expiré",
+  "token": {
+    "required": "Le token est requis",
+    "invalid": "Token invalide"
+  },
+  "invalidRefreshToken": "Token de rafraîchissement invalide",
+  "expiredRefreshToken": "Le token de rafraîchissement a expiré",
+  "invalidTokenType": "Type de token invalide",
+  "userNotFound": "Utilisateur non trouvé",
+  "sessionNotFound": "Session non trouvée",
+  "verificationTokenNotFound": "Token de vérification non trouvé",
+  "verificationTokenExpired": "Le token de vérification a expiré",
+  "emailAlreadyVerified": "L'email est déjà vérifié",
+  "passwordTooWeak": "Le mot de passe est trop faible",
+  "emailExists": "L'email est déjà enregistré",
+  "totpNotEnabled": "L'authentification à deux facteurs n'est pas activée",
+  "totpAlreadyEnabled": "L'authentification à deux facteurs est déjà activée",
+  "totpSetupNotFound": "Configuration TOTP introuvable ou expirée",
+  "invalidTotpCode": "Code TOTP invalide",
+  "invalidBackupCode": "Code de sauvegarde invalide",
+  "backupCodeNotFound": "Code de sauvegarde introuvable ou déjà utilisé",
+  "mfaSessionNotFound": "Session de vérification MFA introuvable",
+  "mfaSessionExpired": "La session de vérification MFA a expiré",
+  "planSlugRequired": "Le slug du plan est requis",
+  "billingIntervalRequired": "L'intervalle de facturation est requis",
+  "billingIntervalInvalid": "L'intervalle de facturation doit être MENSUEL ou ANNUEL",
+  "planTypeInvalid": "Le type de plan doit être FREE ou PAID",
+  "price": {
+    "freeMustBeZero": "Les plans FREE doivent avoir un prix = 0",
+    "paidMustHavePrice": "Les plans PAID doivent avoir au moins un prix supérieur à 0"
+  },
+  "invalidWorkspaceId": "L'ID de l'espace de travail doit être un entier positif valide",
+  "invalidUserId": "L'ID utilisateur doit être un entier positif valide",
+  "workspaceId": {
+    "required": "L'ID de l'espace de travail est requis"
+  },
+  "userId": {
+    "required": "L'ID utilisateur est requis"
+  },
+  "role": {
+    "invalid": "Rôle invalide",
+    "required": "Le rôle est requis"
+  },
+  "url": {
+    "invalid": "Veuillez fournir une URL valide",
+    "required": "L'URL est requise"
+  },
+  "fcmToken": {
+    "required": "Le token FCM est requis"
+  },
+  "platform": {
+    "required": "La plateforme est requise",
+    "invalid": "La plateforme doit être web, android ou ios"
+  },
+  "limit": {
+    "invalid": "La limite doit être un nombre valide",
+    "min": "La limite doit être d'au moins 1",
+    "max": "La limite ne peut pas dépasser 100"
+  },
+  "offset": {
+    "invalid": "Le décalage doit être un nombre valide",
+    "min": "Le décalage doit être d'au moins 0"
+  },
+  "invalidNotificationId": "L'ID de notification doit être un entier positif valide",
+  "notificationId": {
+    "required": "L'ID de notification est requis"
+  },
+  "invalidEventType": "Type d'événement webhook invalide",
+  "eventTypeRequired": "Le type d'événement est requis",
+  "invalidId": "ID invalide",
+  "idRequired": "L'ID est requis",
+  "dateRequired": "La date est requise",
+  "timestampRequired": "L'horodatage est requis",
+  "messageIdRequired": "L'ID du message est requis",
+  "eventTimestampRequired": "L'horodatage de l'événement est requis",
+  "requestBodyRequired": "Le corps de la requête est requis",
+  "stripeSignatureRequired": "La signature Stripe est requise",
+  "invalidWebhookSignature": "Signature webhook invalide"
+}
+

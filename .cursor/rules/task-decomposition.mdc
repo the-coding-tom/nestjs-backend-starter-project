@@ -1,0 +1,44 @@
+---
+description: Break down tasks into components and place code in correct locations
+alwaysApply: true
+---
+
+# Task Decomposition
+
+When implementing a feature or making changes, decompose the task before coding.
+
+## Process
+
+1. **Analyze** - Identify all distinct pieces of functionality required
+2. **Classify** - Determine where each piece belongs per project rules
+3. **Implement** - Create each piece in its correct location
+4. **Connect** - Wire components together with proper imports/dependencies
+
+## Decomposition Checklist
+
+For each task, ask:
+
+- [ ] Does this need a **new API endpoint**? → `src/apis/{module}/`
+- [ ] Does this need **database queries**? → `src/repositories/`
+- [ ] Does this need **pure business logic**? → `src/helpers/`
+- [ ] Does this need **generic utilities**? → `src/utils/`
+- [ ] Does this need **external I/O** (API calls, email, push)? → `src/common/services/`
+- [ ] Does this need **background processing**? → `src/queues/`
+- [ ] Does this need **scheduled execution**? → `src/crons/`
+- [ ] Does this need **new types/entities**? → `src/repositories/entities/` or `src/common/entities/`
+- [ ] Does this need **translations**? → `src/i18n/{lang}/`
+
+## Example
+
+**Task**: "Add email notification when subscription expires"
+
+**Decomposition**:
+1. `src/helpers/subscription.helper.ts` - Pure function to check if subscription is expiring
+2. `src/common/services/email/templates/` - Email template for expiration notice
+3. `src/queues/processors/` - Queue processor to send notifications
+4. `src/crons/processes/` - Cron job to check for expiring subscriptions
+5. `src/i18n/en/subscriptions.json` - Translation keys
+
+## Key Principle
+
+Never put all logic in one file. Separate concerns by placing each piece where the project structure dictates.

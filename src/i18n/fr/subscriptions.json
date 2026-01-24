@@ -1,0 +1,11 @@
+{
+  "retrieved": "Abonnement récupéré avec succès",
+  "checkoutCreated": "Session de paiement créée avec succès",
+  "planUpgraded": "Plan mis à niveau avec succès. Une facture au prorata sera générée.",
+  "planDowngraded": "Plan rétrogradé avec succès. Les modifications prendront effet à la fin de la période de facturation.",
+  "canceled": "Le renouvellement automatique de l'abonnement a été désactivé. Votre abonnement restera actif jusqu'à la fin de la période de facturation en cours.",
+  "portalCreated": "Session du portail créée avec succès",
+  "invoicesRetrieved": "Factures récupérées avec succès",
+  "historyRetrieved": "Historique d'abonnement récupéré avec succès"
+}
+

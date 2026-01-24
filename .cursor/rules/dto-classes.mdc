@@ -1,0 +1,105 @@
+---
+description: DTOs must be classes, not interfaces
+globs: src/**/dto/**/*.ts
+alwaysApply: false
+---
+
+# DTO Classes
+
+DTOs (Data Transfer Objects) must always be **classes**, never interfaces.
+
+## Why Classes Over Interfaces
+
+1. **Runtime existence** - Classes exist at runtime; interfaces are erased during compilation
+2. **Validation** - class-validator decorators only work on classes
+3. **Transformation** - class-transformer can instantiate and transform classes
+4. **Swagger/OpenAPI** - Can introspect class properties for API documentation
+5. **Dependency injection** - NestJS can inject classes
+
+## Correct Pattern
+
+```typescript
+// ✅ GOOD - DTO as class
+export class CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+}
+
+// ✅ GOOD - With validation decorators
+import { IsEmail, IsString, MinLength } from 'class-validator';
+
+export class CreateUserDto {
+  @IsString()
+  name: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+}
+
+// ✅ GOOD - Response DTO
+export class UserResponseDto {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+```
+
+## Wrong Pattern
+
+```typescript
+// ❌ BAD - Interface instead of class
+export interface CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+}
+
+// ❌ BAD - Type alias instead of class
+export type CreateUserDto = {
+  name: string;
+  email: string;
+  password: string;
+};
+```
+
+## When to Use Interfaces/Types
+
+Use interfaces or types for:
+- Internal type definitions (not DTOs)
+- Generic type parameters
+- Union types
+- Mapped types
+- Types that don't need runtime representation
+
+```typescript
+// ✅ OK - Internal types (not DTOs)
+interface PaginationOptions {
+  page: number;
+  limit: number;
+}
+
+// ✅ OK - API response types from external services
+interface StripeWebhookPayload {
+  type: string;
+  data: object;
+}
+```
+
+## File Organization
+
+```
+dto/
+├── create-user.dto.ts    # Class
+├── update-user.dto.ts    # Class
+└── user-response.dto.ts  # Class
+```
+
+## Quick Check
+
+If it's in a `dto/` folder → Must be a class

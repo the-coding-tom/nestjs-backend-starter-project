@@ -1,0 +1,60 @@
+---
+description: Webhook handling patterns for Stripe and external services
+globs: src/apis/webhooks/**/*.ts
+alwaysApply: false
+---
+
+# Webhook Handling
+
+## Service Pattern
+
+```typescript
+async handleWebhook(rawBody: Buffer, signature: string, language: string): Promise<any> {
+  try {
+    // 1. Validate signature + check duplicates
+    const { event } = await this.validator.validateWebhookEvent(rawBody, signature, language);
+
+    // 2. Log for idempotency
+    await this.webhookEventLogRepository.create({
+      source: WebhookSource.STRIPE,
+      event: event.type,
+      externalEventId: event.id,
+      payload: event.data.object,
+    });
+
+    // 3. Route to handler
+    switch (event.type) {
+      case EventType.CHECKOUT_COMPLETED:
+        await handleCheckoutCompleted(event.data.object, this.repository);
+        break;
+      // ... other events
+    }
+
+    return generateSuccessResponse({ /* ... */ });
+  } catch (error) {
+    LoggerService.error(`Webhook processing failed: ${error}`);
+    return generateErrorResponse(error);
+  }
+}
+```
+
+## Handler Pattern
+
+Create handlers in `handlers/` subdirectory:
+
+```typescript
+// handlers/checkout-session-completed.handler.ts
+export async function handleCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session,
+  repository: SubscriptionRepository,
+): Promise<void> {
+  // Handle event
+}
+```
+
+## Rules
+
+- Always validate webhook signature
+- Log events for idempotency (prevent duplicate processing)
+- Use dedicated handler functions per event type
+- Return success even if event is unhandled (acknowledge receipt)

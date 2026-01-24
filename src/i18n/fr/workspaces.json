@@ -1,0 +1,19 @@
+{
+  "created": "Espace de travail créé avec succès",
+  "retrieved": "Espace de travail récupéré avec succès",
+  "updated": "Espace de travail mis à jour avec succès",
+  "deleted": "Espace de travail supprimé avec succès",
+  "membersRetrieved": "Membres de l'espace de travail récupérés avec succès",
+  "memberInvited": "Membre invité avec succès",
+  "invitationAccepted": "Invitation acceptée avec succès",
+  "invitationResent": "Invitation renvoyée avec succès",
+  "memberRoleUpdated": "Rôle du membre mis à jour avec succès",
+  "memberRemoved": "Membre supprimé avec succès",
+  "email": {
+    "invitation": {
+      "subject": "Invitation à l'espace de travail : {workspaceName}",
+      "title": "Invitation à un espace de travail",
+      "message": "{inviterName} vous a invité à rejoindre l'espace de travail \"{workspaceName}\". Cliquez sur le bouton ci-dessous pour accepter l'invitation."
+    }
+  }
+}

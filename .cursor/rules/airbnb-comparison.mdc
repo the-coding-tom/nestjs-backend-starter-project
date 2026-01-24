@@ -1,0 +1,76 @@
+---
+description: Airbnb style - comparison, equality, conditionals
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Comparison & Conditionals
+
+## Strict equality
+
+```typescript
+// ✅ GOOD
+if (value === null) {}
+if (count !== 0) {}
+
+// ❌ BAD - type coercion
+if (value == null) {}
+if (count != 0) {}
+```
+
+## Truthiness shortcuts (when appropriate)
+
+```typescript
+// ✅ GOOD - for booleans
+if (isActive) {}
+if (!isDisabled) {}
+
+// ✅ GOOD - for existence checks
+if (user) {}
+if (items.length) {}
+
+// ⚠️ BE EXPLICIT - for numbers that could be 0
+if (count !== 0) {}  // not: if (count)
+if (index >= 0) {}   // not: if (index)
+```
+
+## Ternaries - simple only
+
+```typescript
+// ✅ GOOD - simple ternary
+const status = isActive ? 'active' : 'inactive';
+
+// ❌ BAD - nested ternaries
+const status = isActive ? 'active' : isPending ? 'pending' : 'inactive';
+
+// ✅ GOOD - use if/else for complex logic
+let status: string;
+if (isActive) {
+  status = 'active';
+} else if (isPending) {
+  status = 'pending';
+} else {
+  status = 'inactive';
+}
+```
+
+## No Yoda conditions
+
+```typescript
+// ✅ GOOD
+if (color === 'red') {}
+
+// ❌ BAD
+if ('red' === color) {}
+```
+
+## Optional chaining
+
+```typescript
+// ✅ GOOD
+const name = user?.profile?.name;
+const result = callback?.();
+
+// ❌ BAD
+const name = user && user.profile && user.profile.name;
+```

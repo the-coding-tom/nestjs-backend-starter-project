@@ -1,0 +1,43 @@
+---
+description: NestJS controller patterns - route handlers and response formatting
+globs: src/apis/**/*.controller.ts
+alwaysApply: false
+---
+
+# Controller Pattern
+
+Controllers handle HTTP routing only - no business logic.
+
+```typescript
+// ✅ GOOD - Controller delegates to service
+@Controller('resource')
+export class ResourceController {
+  constructor(private readonly resourceService: ResourceService) {}
+
+  @Post('action')
+  async action(
+    @Body() dto: ActionDto,
+    @Req() request: ApiRequest,
+    @Res() response: Response,
+  ) {
+    const { status, ...restOfResponse } = await this.service.action(dto, request);
+    response.status(status).json(restOfResponse);
+  }
+}
+
+// ❌ BAD - Business logic in controller
+@Post('action')
+async action(@Body() dto: ActionDto) {
+  const user = await this.userRepository.findById(dto.userId);
+  if (!user) throw new NotFoundException();
+  // ... more logic
+}
+```
+
+## Rules
+
+- Use `ApiRequest` type for request parameter (never `any`)
+- Destructure service response: `{ status, ...restOfResponse }`
+- Set HTTP status from service response
+- Controllers inject ONLY the service, not repositories
+- No try/catch needed - services handle errors

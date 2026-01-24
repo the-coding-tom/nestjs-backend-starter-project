@@ -1,0 +1,21 @@
+{
+  "success": "Succès",
+  "error": "Une erreur s'est produite",
+  "unauthorized": "Accès non autorisé",
+  "notFound": "Ressource non trouvée",
+  "validationError": "Échec de la validation",
+  "serverError": "Erreur interne du serveur",
+  "authenticationError": "Échec de l'authentification",
+  "authenticationRequired": "Authentification requise",
+  "requiresTwoFactor": "Authentification à deux facteurs requise",
+  "operation": {
+    "createdSuccessfully": "Créé avec succès",
+    "updatedSuccessfully": "Mis à jour avec succès",
+    "deletedSuccessfully": "Supprimé avec succès",
+    "retrievedSuccessfully": "Récupéré avec succès"
+  },
+  "cron": {
+    "success": "Tâche cron exécutée avec succès"
+  }
+}
+

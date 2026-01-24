@@ -1,0 +1,76 @@
+---
+description: Airbnb style - naming conventions for variables, functions, classes
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Naming Conventions
+
+## camelCase for variables and functions
+
+```typescript
+// ✅ GOOD
+const userName = 'john';
+const isActive = true;
+function getUserById(id: number) {}
+
+// ❌ BAD
+const user_name = 'john';
+const IsActive = true;
+function get_user_by_id(id: number) {}
+```
+
+## PascalCase for classes and types
+
+```typescript
+// ✅ GOOD
+class UserService {}
+interface UserEntity {}
+type CreateUserData = {};
+enum UserRole {}
+
+// ❌ BAD
+class userService {}
+interface user_entity {}
+```
+
+## UPPER_SNAKE_CASE for constants
+
+```typescript
+// ✅ GOOD
+const MAX_RETRY_COUNT = 3;
+const API_BASE_URL = 'https://api.example.com';
+const DEFAULT_TIMEOUT_MS = 5000;
+
+// ❌ BAD
+const maxRetryCount = 3;
+const apiBaseUrl = 'https://api.example.com';
+```
+
+## Descriptive names
+
+```typescript
+// ✅ GOOD
+const isAuthenticated = true;
+const hasPermission = checkPermission(user);
+function calculateTotalPrice(items: Item[]) {}
+
+// ❌ BAD
+const auth = true;
+const perm = checkPermission(user);
+function calc(i: Item[]) {}
+```
+
+## Boolean prefixes
+
+```typescript
+// ✅ GOOD - is, has, can, should, will
+const isValid = true;
+const hasAccess = true;
+const canEdit = true;
+const shouldRefresh = false;
+
+// ❌ BAD
+const valid = true;
+const access = true;
+```

@@ -1,0 +1,77 @@
+---
+description: Error handling patterns - throwError, generateErrorResponse
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Error Handling
+
+## Throwing Errors (in Validators)
+
+Use `throwError()` from response.helper for consistent error throwing:
+
+```typescript
+// ✅ GOOD
+import { throwError } from '../../helpers/response.helper';
+import { ErrorCode } from '../../common/enums/generic.enum';
+
+throwError(
+  translate(this.i18n, 'errors.notFound', language),
+  HttpStatus.NOT_FOUND,
+  ErrorCode.USER_NOT_FOUND
+);
+
+// ❌ BAD - Raw throw
+throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+```
+
+## Catching Errors in Services
+
+Services must log errors and return standardized error responses:
+
+```typescript
+// ✅ GOOD - Log error with context, then return standardized response
+import { generateErrorResponse } from '../../helpers/response.helper';
+import { LoggerService } from '../../common/services/logger/logger.service';
+
+try {
+  // ... logic
+} catch (error) {
+  LoggerService.error(`Context description: ${error}`);
+  return generateErrorResponse(error);
+}
+
+// ❌ BAD - No error in log message
+try {
+  // ... logic
+} catch (error) {
+  LoggerService.error('Context description');  // Missing error details!
+  return generateErrorResponse(error);
+}
+
+// ❌ BAD - Exposing internal errors
+try {
+  // ... logic
+} catch (error) {
+  throw error;
+}
+```
+
+## Logging
+
+```typescript
+// ✅ GOOD - Use LoggerService static methods
+import { LoggerService } from '../../common/services/logger/logger.service';
+
+LoggerService.info('Operation completed');
+LoggerService.error('Operation failed');
+LoggerService.warn('Warning message');
+LoggerService.debug('Debug info');
+
+// ❌ BAD - Console.log in production
+console.log('Operation completed');
+```
+
+## Error Codes
+
+Use defined error codes from `common/enums/generic.enum.ts`.

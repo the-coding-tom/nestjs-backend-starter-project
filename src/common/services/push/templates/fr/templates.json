@@ -1,0 +1,14 @@
+{
+  "subscription_expiring": {
+    "title": "Abonnement expirant",
+    "body": "Votre abonnement expire le {{expiryDate}}"
+  },
+  "subscription_expired": {
+    "title": "Abonnement expiré",
+    "body": "Votre abonnement a expiré. Renouvelez pour continuer à utiliser toutes les fonctionnalités."
+  },
+  "workspace_invitation_accepted": {
+    "title": "Invitation acceptée",
+    "body": "{{memberName}} a accepté votre invitation à rejoindre {{workspaceName}}"
+  }
+}

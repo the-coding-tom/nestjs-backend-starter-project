@@ -1,0 +1,364 @@
+---
+description: Shared services in common/services for integrations and cross-cutting concerns
+globs: src/common/services/**/*.ts
+alwaysApply: false
+---
+
+# Common Services
+
+Shared services handle infrastructure, integrations, and cross-cutting I/O operations used by **multiple modules**.
+
+## Golden Rule: Multi-Consumer Only
+
+**`common/services/` is ONLY for services used by 2+ modules.**
+
+```
+Single consumer?  → Private method in consumer service
+Multiple consumers? → Extract to common/services/
+```
+
+### ❌ WRONG - Single-Use Service in common/services/
+
+```typescript
+// common/services/jwt/jwt.service.ts
+@Injectable()
+export class JwtTokenService { ... }
+
+// ONLY used by auth.service.ts - VIOLATION!
+```
+
+### ✅ CORRECT - Private Method in Consumer
+
+```typescript
+// apis/auth/auth.service.ts
+@Injectable()
+export class AuthService {
+  constructor(private readonly jwtService: JwtService) {}  // NestJS JwtService
+
+  // Private method - only used here
+  private async generateTokens(user: User): Promise<TokenPair> {
+    const accessToken = this.jwtService.sign({ ... });
+    const refreshToken = this.jwtService.sign({ ... });
+    return { accessToken, refreshToken };
+  }
+}
+```
+
+### ✅ CORRECT - Shared Service (Multi-Consumer)
+
+```typescript
+// common/services/email/email.service.ts - Used by auth AND workspaces
+@Injectable()
+export class EmailService { ... }
+
+// auth.service.ts
+constructor(private readonly emailService: EmailService) {}
+
+// workspaces.service.ts
+constructor(private readonly emailService: EmailService) {}
+```
+
+## When to Create a Common Service
+
+Create a common service **ONLY** when ALL conditions are met:
+1. It performs I/O (API calls, queues, external services)
+2. **It's needed by 2+ modules** (not just anticipated)
+3. It wraps a third-party integration (Stripe, FCM, Brevo)
+
+**Start with private methods. Extract ONLY when a second consumer appears.**
+
+## Feature-Based Structure
+
+Each service with supporting files gets its own folder:
+
+```
+common/services/
+├── email/
+│   ├── email.service.ts      # Main service
+│   ├── email.module.ts       # NestJS module
+│   ├── dto/
+│   │   └── send-email.dto.ts
+│   ├── helpers/              # Service-specific pure functions
+│   │   └── email-template.helper.ts
+│   └── templates/
+│       ├── en/
+│       └── fr/
+├── push/
+├── stripe/
+└── oauth/
+```
+
+## Service Pattern
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+
+@Injectable()
+export class EmailService {
+  constructor(
+    @InjectQueue('email-notification')
+    private readonly emailQueue: Queue,
+  ) {}
+
+  async sendTransactional(params: {
+    to: string;
+    template: string;
+    data: Record<string, any>;
+    language: string;
+  }): Promise<void> {
+    await this.emailQueue.add('send', params, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+    });
+  }
+}
+```
+
+## Integration Service Pattern
+
+For third-party API wrappers:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import Stripe from 'stripe';
+import { getStripe } from './helpers/stripe-client.helper';
+
+@Injectable()
+export class StripeService {
+  async createCheckoutSession(params: CreateCheckoutDto): Promise<Stripe.Checkout.Session> {
+    return getStripe().checkout.sessions.create({
+      mode: 'subscription',
+      customer_email: params.email,
+      line_items: [{ price: params.priceId, quantity: 1 }],
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+    });
+  }
+
+  async cancelSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
+    return getStripe().subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true,
+    });
+  }
+}
+```
+
+## Module Pattern
+
+```typescript
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
+import { EmailService } from './email.service';
+import { EMAIL_NOTIFICATION_QUEUE } from '../../constants/queues.constant';
+
+@Module({
+  imports: [
+    BullModule.registerQueue({ name: EMAIL_NOTIFICATION_QUEUE }),
+  ],
+  providers: [EmailService],
+  exports: [EmailService],
+})
+export class EmailModule {}
+```
+
+## Service-Specific Helpers
+
+### When to Create a Helper File
+
+Create a helper file inside a service folder **ONLY** when:
+1. The code is used by **2+ files** within that service (e.g., service + processor)
+2. It's complex enough to warrant separation (30+ lines)
+
+**Single consumer? → Private method in that file. Do NOT create a helper file.**
+
+```
+Used by 1 file?  → Private method in consumer
+Used by 2+ files? → helpers/{name}.helper.ts
+```
+
+### Service Helpers Can Access Config
+
+Unlike root `helpers/` (which must be pure), service-specific helpers MAY:
+- Import and use `config` directly (for SDK initialization)
+- Maintain singleton state (for client instances)
+- Do I/O (API calls, file reads)
+
+This is acceptable because they're infrastructure code, not domain logic.
+
+### Example: Multi-Consumer Helper
+
+```typescript
+// common/services/email/helpers/email-template.helper.ts
+// Used by BOTH email.service.ts AND email-notification.processor.ts
+import * as Handlebars from 'handlebars';
+
+export function renderEmailTemplate(
+  templateName: string,
+  language: string,
+  variables: Record<string, any>,
+): string {
+  const template = loadTemplate(templateName, language);
+  return Handlebars.compile(template)(variables);
+}
+```
+
+### Example: Single-Consumer → Private Method
+
+```typescript
+// ❌ WRONG - Don't create helper file for single consumer
+// common/services/whatsapp/helpers/whatsapp-client.helper.ts
+export function getWhatsAppClient() { ... }
+
+// ✅ CORRECT - Keep as private method in the only consumer
+// whatsapp-notification.processor.ts
+@Processor(WHATSAPP_NOTIFICATION_QUEUE)
+export class WhatsAppNotificationProcessor {
+  private whatsappClient: AxiosInstance | null = null;
+
+  private getWhatsAppClient(): AxiosInstance {
+    if (!this.whatsappClient) {
+      this.whatsappClient = axios.create({ ... });
+    }
+    return this.whatsappClient;
+  }
+}
+```
+
+## Type Definitions
+
+**Do NOT define interfaces or types directly in service files.** Keep service files focused on the service class.
+
+| Type Category | Location |
+|--------------|----------|
+| Request/Response DTOs | `dto/{name}.dto.ts` |
+| Internal types | `types/{name}.types.ts` |
+| Entity-like types | Service-specific `entities/` or root `repositories/entities/` |
+
+```typescript
+// ❌ Bad - interface in service file
+// email.service.ts
+interface EmailParams {
+  to: string;
+  subject: string;
+}
+
+@Injectable()
+export class EmailService { }
+
+// ✅ Good - types in separate files
+// dto/send-email.dto.ts
+export interface SendEmailDto {
+  to: string;
+  subject: string;
+}
+
+// email.service.ts
+import { SendEmailDto } from './dto/send-email.dto';
+
+@Injectable()
+export class EmailService { }
+```
+
+## DO's and DON'Ts
+
+### DO:
+```typescript
+// ✅ Keep services focused on one integration
+@Injectable()
+export class StripeService { /* Stripe only */ }
+
+@Injectable()
+export class BrvoService { /* Brevo only */ }
+
+// ✅ Use dependency injection
+constructor(
+  private readonly logger: LoggerService,
+  private readonly config: ConfigService,
+) {}
+
+// ✅ Handle errors gracefully
+async sendEmail(params: SendEmailDto): Promise<void> {
+  try {
+    await this.provider.send(params);
+    this.logger.logInfo('EmailService', 'Email sent', { to: params.to });
+  } catch (error) {
+    this.logger.logError('EmailService', error);
+    throw error;
+  }
+}
+```
+
+### DON'T:
+```typescript
+// ❌ Don't put business logic in shared services
+async notifyFarmerAboutLoan(farmerId: string) {
+  const farmer = await this.prisma.farmer.findUnique(...);
+  if (farmer.loanBalance > 5000) { // Business logic!
+    // ...
+  }
+}
+
+// ❌ Don't make shared services depend on domain modules
+constructor(
+  private readonly farmerService: FarmerService, // Circular risk!
+) {}
+
+// ❌ Don't create god services
+class CommunicationService {
+  sendEmail() {}
+  sendSms() {}
+  sendPush() {}
+  sendWhatsApp() {} // Too many responsibilities
+}
+```
+
+## Adding a New Shared Service
+
+1. Create folder: `common/services/{service-name}/`
+2. Create service: `{service-name}.service.ts`
+3. Create module: `{service-name}.module.ts`
+4. Add DTOs if needed: `dto/`
+5. Add helpers if needed: `helpers/`
+6. Export from module
+7. Import in consuming modules
+
+## Testing
+
+```typescript
+describe('EmailService', () => {
+  let service: EmailService;
+  let queue: Queue;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        EmailService,
+        {
+          provide: getQueueToken('email-notification'),
+          useValue: { add: jest.fn() },
+        },
+      ],
+    }).compile();
+
+    service = module.get<EmailService>(EmailService);
+    queue = module.get<Queue>(getQueueToken('email-notification'));
+  });
+
+  it('should add email job to queue', async () => {
+    await service.sendTransactional({
+      to: 'test@example.com',
+      template: 'welcome',
+      data: {},
+      language: 'en',
+    });
+
+    expect(queue.add).toHaveBeenCalledWith(
+      'send',
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+});
+```

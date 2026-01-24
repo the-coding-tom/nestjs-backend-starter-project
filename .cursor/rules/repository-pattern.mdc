@@ -1,0 +1,64 @@
+---
+description: Repository pattern - data access layer with Prisma
+globs: src/repositories/**/*.repository.ts
+alwaysApply: false
+---
+
+# Repository Pattern
+
+Repositories handle data access only - no business logic.
+
+```typescript
+@Injectable()
+export class ResourceRepository {
+  async findById(id: number): Promise<ResourceEntity | null> {
+    return prisma.resource.findUnique({
+      where: { id },
+      include: { /* related entities */ },
+    });
+  }
+
+  async findByField(field: string): Promise<ResourceEntity | null> {
+    return prisma.resource.findFirst({
+      where: { field },
+    });
+  }
+
+  async create(data: CreateResourceData): Promise<ResourceEntity> {
+    return prisma.resource.create({ data });
+  }
+
+  async update(id: number, data: UpdateResourceData): Promise<ResourceEntity> {
+    return prisma.resource.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async delete(id: number): Promise<void> {
+    await prisma.resource.delete({ where: { id } });
+  }
+}
+```
+
+## Entity Types
+
+Define in `repositories/entities/resource.entity.ts`:
+
+```typescript
+export interface CreateResourceData {
+  field1: string;
+  field2: number;
+}
+
+export interface UpdateResourceData {
+  field1?: string;
+  field2?: number;
+}
+```
+
+## Rules
+
+- Use proper entity return types (never `any`)
+- No business logic - validation happens in validators
+- Define entity types in `repositories/entities/`

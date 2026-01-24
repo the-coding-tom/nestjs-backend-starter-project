@@ -1,0 +1,7 @@
+{
+  "verification_code": {
+    "metaTemplateName": "otp_verification_v1",
+    "languageCode": "en_US",
+    "parameterOrder": ["code", "expiryMinutes"]
+  }
+}

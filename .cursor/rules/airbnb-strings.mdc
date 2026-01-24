@@ -1,0 +1,53 @@
+---
+description: Airbnb style - strings, template literals, quotes
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Strings
+
+## Use single quotes
+
+```typescript
+// ✅ GOOD
+const name = 'John';
+
+// ❌ BAD
+const name = "John";
+```
+
+## Template literals for interpolation
+
+```typescript
+// ✅ GOOD
+const message = `Hello, ${name}!`;
+const url = `${baseUrl}/users/${userId}`;
+
+// ❌ BAD - string concatenation
+const message = 'Hello, ' + name + '!';
+const url = baseUrl + '/users/' + userId;
+```
+
+## Template literals for multiline
+
+```typescript
+// ✅ GOOD
+const html = `
+  <div>
+    <h1>${title}</h1>
+  </div>
+`;
+
+// ❌ BAD
+const html = '<div>\n' +
+  '  <h1>' + title + '</h1>\n' +
+  '</div>';
+```
+
+## Never use eval()
+
+```typescript
+// ❌ NEVER
+eval('doSomething()');
+new Function('return this');
+```

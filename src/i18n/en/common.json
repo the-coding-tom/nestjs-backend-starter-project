@@ -1,0 +1,21 @@
+{
+  "success": "Success",
+  "error": "An error occurred",
+  "unauthorized": "Unauthorized access",
+  "notFound": "Resource not found",
+  "validationError": "Validation failed",
+  "serverError": "Internal server error",
+  "authenticationError": "Authentication failed",
+  "authenticationRequired": "Authentication required",
+  "requiresTwoFactor": "Two-factor authentication required",
+  "operation": {
+    "createdSuccessfully": "Created successfully",
+    "updatedSuccessfully": "Updated successfully",
+    "deletedSuccessfully": "Deleted successfully",
+    "retrievedSuccessfully": "Retrieved successfully"
+  },
+  "cron": {
+    "success": "Cron job executed successfully"
+  }
+}
+

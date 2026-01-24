@@ -1,0 +1,86 @@
+---
+description: Airbnb style - async/await, promises, error handling
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Async & Promises
+
+## async/await over .then() chains
+
+```typescript
+// ✅ GOOD
+async function fetchUser(id: number): Promise<User> {
+  const response = await fetch(`/users/${id}`);
+  const data = await response.json();
+  return data;
+}
+
+// ❌ BAD - promise chains
+function fetchUser(id: number): Promise<User> {
+  return fetch(`/users/${id}`)
+    .then(response => response.json())
+    .then(data => data);
+}
+```
+
+## Handle errors with try/catch
+
+```typescript
+// ✅ GOOD - General async error handling
+async function getUser(id: number) {
+  try {
+    const user = await this.repository.findById(id);
+    return user;
+  } catch (error) {
+    logger.error('Failed to get user', { id, error });
+    throw error;
+  }
+}
+```
+
+> **Note:** In NestJS service methods, use `generateErrorResponse(error)` instead of re-throwing.
+> See `error-handling.mdc` for project-specific patterns.
+
+## Promise.all for parallel operations
+
+```typescript
+// ✅ GOOD - parallel execution
+const [users, posts] = await Promise.all([
+  fetchUsers(),
+  fetchPosts(),
+]);
+
+// ❌ BAD - sequential when parallel is possible
+const users = await fetchUsers();
+const posts = await fetchPosts();
+```
+
+## Don't await in loops (when parallelizable)
+
+```typescript
+// ✅ GOOD - parallel
+const results = await Promise.all(
+  ids.map(id => fetchItem(id))
+);
+
+// ❌ BAD - sequential
+const results = [];
+for (const id of ids) {
+  results.push(await fetchItem(id));
+}
+```
+
+## Always return or await promises
+
+```typescript
+// ✅ GOOD
+async function save(data: Data): Promise<void> {
+  await this.repository.save(data);
+}
+
+// ❌ BAD - floating promise
+async function save(data: Data): Promise<void> {
+  this.repository.save(data);  // not awaited!
+}
+```

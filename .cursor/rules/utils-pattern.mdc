@@ -1,0 +1,179 @@
+---
+description: Pure utility functions - generic, stateless, framework-agnostic
+globs: src/utils/**/*.ts
+alwaysApply: false
+---
+
+# Utils Pattern
+
+Utils are pure, generic utility functions that could work in ANY codebase.
+
+## Characteristics
+
+- **Pure**: Same input always produces same output
+- **Stateless**: No side effects, no external state
+- **Generic**: No business/domain knowledge
+- **Framework-agnostic**: Could be published as npm package
+- **No I/O**: No API calls, database, file system, or network
+
+## What Belongs in Utils
+
+```typescript
+// ✅ Array utilities
+function chunk<T>(array: T[], size: number): T[][]
+function groupBy<T>(array: T[], key: keyof T): Record<string, T[]>
+function unique<T>(array: T[]): T[]
+
+// ✅ String utilities
+function slugify(text: string): string
+function truncate(text: string, length: number, suffix?: string): string
+function capitalize(text: string): string
+
+// ✅ Date utilities
+function addDays(date: Date, days: number): Date
+function diffInDays(date1: Date, date2: Date): number
+function formatDate(date: Date, format: string): string
+
+// ✅ Crypto utilities (pure transformations)
+function hashPassword(password: string): Promise<string>
+function verifyPassword(password: string, hash: string): Promise<boolean>
+function generateRandomString(length: number): string
+
+// ✅ Object utilities
+function pick<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K>
+function omit<T, K extends keyof T>(obj: T, keys: K[]): Omit<T, K>
+function deepClone<T>(obj: T): T
+
+// ✅ Validation utilities (pure checks)
+function isEmail(value: string): boolean
+function isUUID(value: string): boolean
+function isURL(value: string): boolean
+```
+
+## What Does NOT Belong in Utils
+
+```typescript
+// ❌ Does I/O (API calls)
+async function sendEmail(to: string): Promise<void>
+async function fetchUserData(userId: string): Promise<User>
+
+// ❌ Has domain knowledge
+function calculateFarmerEligibility(farmer: Farmer): boolean
+function isWorkspaceOwner(workspace: Workspace, userId: number): boolean
+
+// ❌ Maintains state
+let cachedValue = null;
+function getCachedValue(): any { return cachedValue; }
+
+// ❌ Depends on external systems
+function getCurrentTime(): Date { return new Date(); } // Hard to test
+```
+
+## File Organization
+
+```
+utils/
+├── array.util.ts       # Array manipulation
+├── string.util.ts      # String manipulation (slug, truncate)
+├── date.util.ts        # Date formatting and calculations
+├── crypto.util.ts      # Hashing, encryption
+├── password.util.ts    # Password hashing
+├── token.util.ts       # Token generation
+├── validation.util.ts  # Pure validation checks
+├── object.util.ts      # Object manipulation
+└── html-to-text.util.ts
+```
+
+## Writing Utils
+
+### Use Named Exports
+
+```typescript
+// ✅ Good - named exports
+export function slugify(text: string): string { }
+export function truncate(text: string, length: number): string { }
+
+// ❌ Bad - default exports
+export default function slugify(text: string): string { }
+```
+
+### Type Everything
+
+```typescript
+// ✅ Good - explicit types
+function chunk<T>(array: T[], size: number): T[][] {
+  return array.reduce((chunks, item, index) => {
+    const chunkIndex = Math.floor(index / size);
+    if (!chunks[chunkIndex]) chunks[chunkIndex] = [];
+    chunks[chunkIndex].push(item);
+    return chunks;
+  }, [] as T[][]);
+}
+
+// ❌ Bad - any types
+function chunk(array: any, size: any): any { }
+```
+
+### Make Functions Testable
+
+```typescript
+// ❌ Bad - depends on Date.now(), hard to test
+function isExpired(timestamp: number): boolean {
+  return timestamp < Date.now();
+}
+
+// ✅ Good - inject time dependency
+function isExpired(timestamp: number, currentTime: number = Date.now()): boolean {
+  return timestamp < currentTime;
+}
+```
+
+### Keep Functions Single-Purpose
+
+```typescript
+// ❌ Bad - doing too much
+function validateAndFormatEmail(email: string): string {
+  if (!isValidEmail(email)) throw new Error('Invalid');
+  return email.toLowerCase().trim();
+}
+
+// ✅ Good - separate concerns
+function isValidEmail(email: string): boolean { }
+function normalizeEmail(email: string): string { }
+```
+
+## Testing Utils
+
+Utils are the easiest to test - pure functions with predictable outputs:
+
+```typescript
+describe('slugify', () => {
+  it('should convert text to slug', () => {
+    expect(slugify('Hello World')).toBe('hello-world');
+  });
+
+  it('should handle special characters', () => {
+    expect(slugify('Hello & World!')).toBe('hello-world');
+  });
+
+  it('should handle multiple spaces', () => {
+    expect(slugify('Hello    World')).toBe('hello-world');
+  });
+});
+
+describe('chunk', () => {
+  it('should split array into chunks', () => {
+    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it('should handle empty array', () => {
+    expect(chunk([], 2)).toEqual([]);
+  });
+});
+```
+
+## Golden Rule
+
+**If it talks to external systems, makes business decisions, or maintains state—it's NOT a util.**
+
+Utils are the pure, reusable tools that could live in any codebase.
