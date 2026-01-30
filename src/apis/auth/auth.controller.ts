@@ -169,19 +169,19 @@ export class AuthController {
 
   /**
    * OAuth callback from Google; exchanges code for tokens and creates/links user.
-   * @param query - Code and state from Google
+   * @param body - Code and state from frontend (extracted from OAuth redirect)
    * @param request - API request
-   * @param response - Express response (redirect or JSON)
-   * @returns Response sent via response (tokens or redirect)
+   * @param response - Express response for status and body
+   * @returns Response sent via response (tokens and user or error)
    */
-  @Get('google/callback')
+  @Post('google/callback')
   async handleGoogleCallback(
-    @Query() query: OAuthCallbackDto,
+    @Body() body: OAuthCallbackDto,
     @Req() request: ApiRequest,
     @Res() response: Response,
   ) {
     const { status, ...restOfResponse } = await this.authService.handleGoogleCallback(
-      query,
+      body,
       request,
     );
     response.status(status).json(restOfResponse);
@@ -201,19 +201,19 @@ export class AuthController {
 
   /**
    * OAuth callback from GitHub; exchanges code for tokens and creates/links user.
-   * @param query - Code and state from GitHub
+   * @param body - Code and state from frontend (extracted from OAuth redirect)
    * @param request - API request
-   * @param response - Express response (redirect or JSON)
-   * @returns Response sent via response (tokens or redirect)
+   * @param response - Express response for status and body
+   * @returns Response sent via response (tokens and user or error)
    */
-  @Get('github/callback')
+  @Post('github/callback')
   async handleGitHubCallback(
-    @Query() query: OAuthCallbackDto,
+    @Body() body: OAuthCallbackDto,
     @Req() request: ApiRequest,
     @Res() response: Response,
   ) {
     const { status, ...restOfResponse } = await this.authService.handleGitHubCallback(
-      query,
+      body,
       request,
     );
     response.status(status).json(restOfResponse);

@@ -33,7 +33,9 @@ export const config = {
       authUrl: process.env.GITHUB_AUTH_URL || 'https://github.com/login/oauth/authorize',
       tokenUrl: process.env.GITHUB_TOKEN_URL || 'https://github.com/login/oauth/access_token',
     },
-    redirectUri: process.env.OAUTH_REDIRECT_URI || 'http://localhost:3000/api/v1/auth/callback',
+    // Frontend URL where OAuth providers redirect after authentication
+    // Configure this same URL in Google Cloud Console and GitHub OAuth App settings
+    redirectUri: process.env.OAUTH_REDIRECT_URI || 'http://localhost:3000/auth/callback',
   },
 
   // Email Configuration (SMTP) - Deprecated, use Brevo instead
