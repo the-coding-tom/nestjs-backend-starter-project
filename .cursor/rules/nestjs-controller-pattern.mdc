@@ -36,6 +36,7 @@ async action(@Body() dto: ActionDto) {
 
 ## Rules
 
+- **Full JSDoc on every public route**: Every controller route MUST have a full JSDoc block (description + `@param` for each parameter + `@returns`). Update the JSDoc whenever the route’s parameters, response, or behavior changes. See `comments.mdc` for format and examples.
 - Use `ApiRequest` type for request parameter (never `any`)
 - Destructure service response: `{ status, ...restOfResponse }`
 - Set HTTP status from service response

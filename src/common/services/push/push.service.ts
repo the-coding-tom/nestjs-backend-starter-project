@@ -94,8 +94,12 @@ export class PushService {
   }
 
   /**
-   * Send generic push notification
-   * Used by NotificationDispatcherService
+   * Send generic push notification to multiple devices (queued). Used by NotificationDispatcherService.
+   * @param tokens - FCM device tokens
+   * @param title - Notification title
+   * @param body - Notification body
+   * @param data - Optional key-value data payload
+   * @returns Promise that resolves when pushes are queued
    */
   async send(
     tokens: string[],
@@ -107,7 +111,11 @@ export class PushService {
   }
 
   /**
-   * Send subscription expiring notification
+   * Send subscription expiring notification: creates DB notification and queues push to user devices.
+   * @param userId - User ID
+   * @param language - Language for template
+   * @param payload - Expiry date and optional metadata
+   * @returns Created notification record
    */
   async sendSubscriptionExpiringNotification(
     userId: number,
@@ -150,7 +158,11 @@ export class PushService {
   }
 
   /**
-   * Send subscription expired notification
+   * Send subscription expired notification: creates DB notification and queues push to user devices.
+   * @param userId - User ID
+   * @param language - Language for template
+   * @param payload - Optional metadata
+   * @returns Created notification record
    */
   async sendSubscriptionExpiredNotification(
     userId: number,
@@ -193,7 +205,11 @@ export class PushService {
   }
 
   /**
-   * Send workspace invitation accepted notification
+   * Send workspace invitation accepted notification: creates DB notification and queues push to user devices.
+   * @param userId - User ID (workspace owner to notify)
+   * @param language - Language for template
+   * @param payload - Member name, workspace name
+   * @returns Created notification record
    */
   async sendWorkspaceInvitationAcceptedNotification(
     userId: number,

@@ -2,19 +2,22 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { StripeCheckoutSessionRepository } from '../../repositories/stripe-checkout-session.repository';
 
+/**
+ * Marks old PENDING checkout sessions as EXPIRED so the DB and Stripe expectations stay in sync when users never complete checkout.
+ */
 @Injectable()
 export class CleanupExpiredCheckoutSessionsCron {
   private readonly logger = new Logger(CleanupExpiredCheckoutSessionsCron.name);
 
-  private readonly EXPIRE_SESSION_HOURS = 48; // Sessions older than 48 hours are marked expired
+  // Stripe checkout links typically expire within 24h; 48h gives buffer before we mark PENDING as EXPIRED.
+  private readonly EXPIRE_SESSION_HOURS = 48;
 
   constructor(
     private readonly stripeCheckoutSessionRepository: StripeCheckoutSessionRepository,
   ) {}
 
   /**
-   * Cleanup job - runs daily at midnight
-   * Expires old PENDING checkout sessions that will never be completed
+   * Expires PENDING checkout sessions that will never be completed so they are not left in PENDING forever.
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleExpireOldSessions() {

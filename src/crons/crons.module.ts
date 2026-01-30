@@ -5,6 +5,7 @@ import { QueueProducersModule } from '../queues/queue-producers.module';
 import { CleanupExpiredSessionsCron } from './processes/cleanup-expired-sessions.cron';
 import { CleanupExpiredCheckoutSessionsCron } from './processes/cleanup-expired-checkout-sessions.cron';
 import { SubscriptionReconciliationCron } from './processes/subscription-reconciliation.cron';
+import { QueueCleanupCron } from './processes/queue-cleanup.cron';
 
 /**
  * Crons Module
@@ -27,6 +28,7 @@ import { SubscriptionReconciliationCron } from './processes/subscription-reconci
     CleanupExpiredSessionsCron,
     SubscriptionReconciliationCron,
     CleanupExpiredCheckoutSessionsCron,
+    QueueCleanupCron,
   ],
 })
 export class CronsModule { }

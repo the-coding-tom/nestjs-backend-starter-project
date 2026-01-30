@@ -2,6 +2,9 @@ import Stripe from 'stripe';
 import { SubscriptionRepository } from '../../../../repositories/subscription.repository';
 import { SubscriptionStatus } from '@prisma/client';
 
+/**
+ * Reactivates subscription to ACTIVE when an invoice is paid (e.g. after past_due).
+ */
 export async function handleInvoicePaymentSucceeded(
   invoice: Stripe.Invoice,
   subscriptionRepository: SubscriptionRepository,
@@ -28,7 +31,6 @@ export async function handleInvoicePaymentSucceeded(
     return;
   }
 
-  // Ensure subscription is active after successful payment
   if (subscription.status !== SubscriptionStatus.ACTIVE) {
     await subscriptionRepository.updateStatus(subscription.id, SubscriptionStatus.ACTIVE);
     console.log(`[Stripe] Subscription reactivated after payment: ${subscription.id}`);

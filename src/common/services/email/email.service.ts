@@ -68,8 +68,12 @@ export class EmailService {
   }
 
   /**
-   * Send a generic HTML email
-   * Used by NotificationDispatcherService
+   * Send a generic HTML email (queued). Used by NotificationDispatcherService.
+   * @param to - Recipient email
+   * @param subject - Email subject
+   * @param html - HTML body
+   * @param text - Optional plain-text fallback (auto-generated from html if omitted)
+   * @returns Queue job ID
    */
   async sendHtml(to: string, subject: string, html: string, text?: string): Promise<string> {
     const payload: SendEmailPayload = {
@@ -82,10 +86,11 @@ export class EmailService {
   }
 
   /**
-   * Send email verification notification
-   * 
-   * Note: Email verification is stored in VerificationRequest table, not Notification table.
-   * Notifications are only for registered users actively using the app.
+   * Send email verification notification (queued). Stored in VerificationRequest, not Notification table.
+   * @param email - Recipient email
+   * @param language - Language for template
+   * @param payload - Token for verification link
+   * @returns Promise that resolves when email is queued
    */
   async sendEmailVerification(
     email: string,
@@ -119,10 +124,11 @@ export class EmailService {
   }
 
   /**
-   * Send password reset notification
-   * 
-   * Note: Password reset is stored in VerificationRequest table, not Notification table.
-   * Notifications are only for registered users actively using the app.
+   * Send password reset notification (queued). Stored in VerificationRequest, not Notification table.
+   * @param email - Recipient email
+   * @param language - Language for template
+   * @param payload - Token for reset link
+   * @returns Promise that resolves when email is queued
    */
   async sendPasswordReset(
     email: string,
@@ -158,10 +164,11 @@ export class EmailService {
   }
 
   /**
-   * Send welcome email
-   * 
-   * Note: Welcome emails are informational only, not stored in Notification table.
-   * Notifications are only for registered users actively using the app.
+   * Send welcome email (queued). Informational only, not stored in Notification table.
+   * @param email - Recipient email
+   * @param language - Language for template
+   * @param _payload - Optional (unused) payload
+   * @returns Promise that resolves when email is queued
    */
   async sendWelcome(
     email: string,
@@ -192,11 +199,11 @@ export class EmailService {
   }
 
   /**
-   * Send workspace invitation notification
-   * 
-   * Note: Workspace invitations are stored in WorkspaceInvitation table, not Notification table.
-   * If the invited user is already registered, a notification will be created separately
-   * via NotificationHelperService when they accept the invitation.
+   * Send workspace invitation notification (queued). Stored in WorkspaceInvitation table.
+   * @param email - Recipient email
+   * @param language - Language for template
+   * @param payload - Workspace name, token, inviter name, role
+   * @returns Promise that resolves when email is queued
    */
   async sendWorkspaceInvitation(
     email: string,

@@ -47,6 +47,7 @@ import { ApiRequest } from '../../common/types/request.types';
 
 ## Rules
 
+- **Full JSDoc on every public method**: Every public service method MUST have a full JSDoc block (description + `@param` for each parameter + `@returns`, and `@throws` when relevant). Update the JSDoc whenever the method’s parameters, return type, or behavior changes. See `comments.mdc` for format and examples.
 - Always wrap in `try/catch` with error logging and `generateErrorResponse()`
 - Always validate through dedicated validator class
 - Always use `generateSuccessResponse()` for success

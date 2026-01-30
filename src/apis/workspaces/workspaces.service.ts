@@ -26,6 +26,9 @@ import { InboxService } from '../../common/services/inbox/inbox.service';
 import { randomBytes } from 'crypto';
 import * as moment from 'moment';
 
+/**
+ * Manages workspaces, members, and invitations; integrates with email and inbox for invites.
+ */
 @Injectable()
 export class WorkspacesService {
   constructor(
@@ -41,16 +44,21 @@ export class WorkspacesService {
     private readonly inboxService: InboxService,
   ) { }
 
+  /**
+   * Create workspace; caller becomes owner and first member.
+   * @param userId - User ID (becomes owner)
+   * @param dto - Workspace name and optional image
+   * @param request - API request (language, etc.)
+   * @returns Success response with workspace or error response
+   */
   async createWorkspace(userId: number, dto: CreateWorkspaceDto, request: ApiRequest): Promise<any> {
     try {
       const { dto: validatedDto, ownerId } = await this.workspacesValidator.validateCreateWorkspace(dto, userId, request.language);
 
-      // Generate unique slug from workspace name
       const baseSlug = generateSlug(validatedDto.name);
       const maxNumber = await this.workspaceRepository.getMaxSlugNumber(ownerId, baseSlug);
       const slug = generateUniqueSlugFromMax(baseSlug, maxNumber);
 
-      // Create workspace with owner as member using repository transaction method
       const workspace = await this.workspaceRepository.createWithOwnerMember(
         {
           name: validatedDto.name,
@@ -71,6 +79,12 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * List workspaces the user is a member of.
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with workspaces array or error response
+   */
   async getWorkspaces(userId: number, request: ApiRequest): Promise<any> {
     try {
       const workspaces = await this.workspaceRepository.findAllByUserId(userId);
@@ -86,11 +100,17 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Get workspace by ID with plan features and limits.
+   * @param workspaceId - Workspace ID
+   * @param userId - User ID (must be member)
+   * @param request - API request (language, etc.)
+   * @returns Success response with workspace and plan/features/limits or error response
+   */
   async getWorkspace(workspaceId: number, userId: number, request: ApiRequest): Promise<any> {
     try {
       const { workspace } = await this.workspacesValidator.validateGetWorkspace(workspaceId, userId, request.language);
 
-      // Get subscription info
       const subscription = await this.subscriptionRepository.findWorkspaceOwnerActiveSubscription(workspaceId);
       const fallbackPlan = await this.planRepository.findFreePlan();
       const planFeatures = buildPlanFeaturesAndLimits(subscription, fallbackPlan);
@@ -111,6 +131,7 @@ export class WorkspacesService {
     }
   }
 
+  /** Update workspace name/image; slug regenerated if name changes. */
   async updateWorkspace(
     workspaceId: number,
     userId: number,
@@ -125,7 +146,6 @@ export class WorkspacesService {
         request.language,
       );
 
-      // Auto-regenerate slug if name changed
       const updateData: { name?: string; image?: string | null; slug?: string } = { ...validatedDto };
       if (validatedDto.name && validatedDto.name !== existingWorkspace.name) {
         const baseSlug = generateSlug(validatedDto.name);
@@ -146,6 +166,13 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Delete workspace (owner only).
+   * @param workspaceId - Workspace ID
+   * @param userId - User ID (must be owner)
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async deleteWorkspace(workspaceId: number, userId: number, request: ApiRequest): Promise<any> {
     try {
       const { workspace } = await this.workspacesValidator.validateDeleteWorkspace(workspaceId, userId, request.language);
@@ -163,6 +190,7 @@ export class WorkspacesService {
     }
   }
 
+  /** List workspace members. */
   async getWorkspaceMembers(workspaceId: number, userId: number, request: ApiRequest): Promise<any> {
     try {
       await this.workspacesValidator.validateGetWorkspace(workspaceId, userId, request.language);
@@ -180,6 +208,14 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Invite user by email; creates shadow user if needed, sends email and inbox notification.
+   * @param workspaceId - Workspace ID
+   * @param userId - User ID (inviter; must have permission)
+   * @param dto - Email and optional role
+   * @param request - API request (language, etc.)
+   * @returns Success response with invitation details or error response
+   */
   async inviteMember(
     workspaceId: number,
     userId: number,
@@ -194,17 +230,14 @@ export class WorkspacesService {
         request.language,
       );
 
-      // Check if user exists or create Shadow User
       let invitee = await this.userRepository.findByEmail(validatedDto.email);
       if (!invitee) {
         invitee = await this.userRepository.createShadowUser(validatedDto.email);
       }
 
-      // Generate invitation token
       const token = randomBytes(32).toString('hex');
       const expiresAt = moment().add(7, 'days').toDate();
 
-      // Create invitation
       const invitation = await this.workspaceInvitationRepository.create({
         workspaceId,
         email: validatedDto.email,
@@ -215,7 +248,6 @@ export class WorkspacesService {
         expiresAt,
       });
 
-      // Create inbox notification
       await this.inboxService.create(
         invitee.id,
         'workspace-invitation',
@@ -228,7 +260,6 @@ export class WorkspacesService {
         }
       );
 
-      // Send workspace invitation email
       await this.emailService.sendWorkspaceInvitation(
         invitee.email,
         invitee.language || 'en',
@@ -256,6 +287,7 @@ export class WorkspacesService {
     }
   }
 
+  /** Accept invitation by token; adds user as member and deletes invitation. */
   async acceptInvitation(token: string, userId: number, request: ApiRequest): Promise<any> {
     try {
       const { invitation, user } = await this.workspacesValidator.validateAcceptInvitation(
@@ -264,7 +296,6 @@ export class WorkspacesService {
         request.language,
       );
 
-      // Accept invitation and create member in a single transaction
       const member = await this.workspaceInvitationRepository.acceptInvitationAndCreateMember(
         invitation.workspaceId,
         user.id,
@@ -284,6 +315,14 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Resend invitation with new token and email.
+   * @param workspaceId - Workspace ID
+   * @param userId - User ID (must have permission)
+   * @param dto - Member ID or email to resend for
+   * @param request - API request (language, etc.)
+   * @returns Success response with invitation details or error response
+   */
   async resendInvitation(
     workspaceId: number,
     userId: number,
@@ -298,20 +337,17 @@ export class WorkspacesService {
         request.language,
       );
 
-      // Generate new invitation token
       const token = randomBytes(32).toString('hex');
       const expiresAt = moment().add(7, 'days').toDate();
 
       // Update invitation with new token and expiration
       await this.workspaceInvitationRepository.updateToken(invitation.id, token, expiresAt);
 
-      // Find or create invitee user
       let invitee = await this.userRepository.findByEmail(invitation.email);
       if (!invitee) {
         invitee = await this.userRepository.createShadowUser(invitation.email);
       }
 
-      // Create inbox notification
       await this.inboxService.create(
         invitee.id,
         'workspace-invitation',
@@ -324,7 +360,6 @@ export class WorkspacesService {
         }
       );
 
-      // Send workspace invitation email
       await this.emailService.sendWorkspaceInvitation(
         invitee.email,
         invitee.language || 'en',
@@ -352,6 +387,15 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Update a member's role.
+   * @param workspaceId - Workspace ID
+   * @param memberUserId - User ID of member to update
+   * @param userId - User ID (must have permission)
+   * @param dto - New role
+   * @param request - API request (language, etc.)
+   * @returns Success response with updated member or error response
+   */
   async updateMemberRole(
     workspaceId: number,
     memberUserId: number,
@@ -381,6 +425,14 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Remove member from workspace.
+   * @param workspaceId - Workspace ID
+   * @param memberUserId - User ID of member to remove
+   * @param userId - User ID (must have permission)
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async removeMember(workspaceId: number, memberUserId: number, userId: number, request: ApiRequest): Promise<any> {
     try {
       const { member } = await this.workspacesValidator.validateRemoveMember(workspaceId, memberUserId, userId, request.language);
@@ -398,6 +450,12 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Preview invitation by token (public; no auth).
+   * @param token - Invitation token from email link
+   * @param request - API request (language, etc.)
+   * @returns Success response with invitation preview or error response
+   */
   async previewInvitation(token: string, request: ApiRequest): Promise<any> {
     try {
       const { invitation, emailRegistered, isExpired, isAccepted, isRejected } =
@@ -426,6 +484,13 @@ export class WorkspacesService {
     }
   }
 
+  /**
+   * Reject invitation by token.
+   * @param token - Invitation token from email link
+   * @param userId - User ID (must match invitee)
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async rejectInvitation(token: string, userId: number, request: ApiRequest): Promise<any> {
     try {
       const { invitation } = await this.workspacesValidator.validateRejectInvitation(
@@ -434,7 +499,6 @@ export class WorkspacesService {
         request.language,
       );
 
-      // Mark invitation as rejected
       await this.workspaceInvitationRepository.markAsRejected(token, new Date());
 
       return generateSuccessResponse({

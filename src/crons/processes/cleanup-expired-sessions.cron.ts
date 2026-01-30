@@ -5,10 +5,7 @@ import { VerificationRequestRepository } from '../../repositories/verification-r
 import { Constants } from '../../common/enums/generic.enum';
 
 /**
- * Cleanup Expired Sessions Cron
- * 
- * Runs periodically to clean up expired sessions and verification requests.
- * This helps keep the database clean and improves performance.
+ * Removes expired sessions and verification requests so the database does not retain them indefinitely and auth state stays accurate.
  */
 @Injectable()
 export class CleanupExpiredSessionsCron {
@@ -19,17 +16,17 @@ export class CleanupExpiredSessionsCron {
     private readonly verificationRequestRepository: VerificationRequestRepository,
   ) {}
 
-  // Run every hour
+  /**
+   * Deletes expired sessions and verification requests so they are not kept in the DB.
+   */
   @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
     this.logger.log('Starting cleanup of expired sessions and verification requests');
 
     try {
-      // Clean up expired sessions
       const deletedSessions = await this.sessionRepository.deleteExpiredSessions();
       this.logger.log(`Deleted ${deletedSessions} expired sessions`);
 
-      // Clean up expired verification requests
       const deletedVerifications =
         await this.verificationRequestRepository.deleteExpired();
       this.logger.log(`Deleted ${deletedVerifications} expired verification requests`);

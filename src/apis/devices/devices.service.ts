@@ -8,6 +8,9 @@ import { translate } from '../../helpers/i18n.helper';
 import { RegisterDeviceDto } from './dto/devices.dto';
 import { ApiRequest } from '../../common/types/request.types';
 
+/**
+ * Registers and unregisters FCM device tokens for push notifications.
+ */
 @Injectable()
 export class DevicesService {
   constructor(
@@ -16,6 +19,13 @@ export class DevicesService {
     private readonly i18n: I18nService,
   ) {}
 
+  /**
+   * Register or update FCM token for push notifications.
+   * @param userId - User ID
+   * @param dto - Device token and optional name/platform
+   * @param request - API request (language, etc.)
+   * @returns Success response with message or error response
+   */
   async registerDevice(userId: number, dto: RegisterDeviceDto, request: ApiRequest): Promise<any> {
     try {
       const { existingDevice } = await this.devicesValidator.validateRegisterDevice({
@@ -58,9 +68,15 @@ export class DevicesService {
     }
   }
 
+  /**
+   * Unregister device by ID.
+   * @param userId - User ID
+   * @param deviceId - Device ID to remove
+   * @param request - API request (language, etc.)
+   * @returns Success response with message or error response
+   */
   async unregisterDevice(userId: number, deviceId: number, request: ApiRequest): Promise<any> {
     try {
-      // Validate device exists and belongs to user
       await this.devicesValidator.validateUnregisterDevice({
         deviceId,
         userId,

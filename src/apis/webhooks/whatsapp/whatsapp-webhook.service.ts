@@ -12,6 +12,9 @@ import {
   ProcessedWhatsAppStatus,
 } from './dto/whatsapp-webhook.dto';
 
+/**
+ * Receives Meta WhatsApp webhooks: verification (GET) and delivery/status events (POST); logs events for idempotency and tracking.
+ */
 @Injectable()
 export class WhatsAppWebhookService {
   private readonly logger = new Logger(WhatsAppWebhookService.name);
@@ -46,13 +49,12 @@ export class WhatsAppWebhookService {
   }
 
   /**
-   * Handle webhook event notification (POST)
-   * Processes delivery status updates
-   *
+   * Handle webhook event notification (POST); processes delivery status updates.
    * @param rawBody - Raw request body for signature verification
-   * @param body - Parsed request body
+   * @param body - Parsed request body (fallback if rawBody missing)
    * @param signature - X-Hub-Signature-256 header
    * @param request - API request with language
+   * @returns Success response with received/processed count or error response
    */
   async handleWebhook(
     rawBody: string,
@@ -61,23 +63,19 @@ export class WhatsAppWebhookService {
     request: ApiRequest,
   ): Promise<any> {
     try {
-      // Verify webhook signature
       this.whatsappWebhookValidator.verifySignature(
         rawBody,
         signature,
         request.language,
       );
 
-      // Validate payload structure
       const payload = this.whatsappWebhookValidator.validatePayload(
         body,
         request.language,
       );
 
-      // Extract status events from payload
       const statusEvents = await this.extractStatusEvents(payload);
 
-      // Process each status event
       for (const statusEvent of statusEvents) {
         await this.processStatusEvent(statusEvent);
       }
@@ -118,10 +116,8 @@ export class WhatsAppWebhookService {
         const { value } = change;
         const phoneNumberId = value.metadata.phone_number_id;
 
-        // Process status updates (delivery receipts)
         if (value.statuses) {
           for (const status of value.statuses) {
-            // Check for duplicate event
             const isDuplicate = await this.webhookEventLogRepository.exists(
               WebhookSource.WHATSAPP,
               status.id,
@@ -129,8 +125,7 @@ export class WhatsAppWebhookService {
             );
 
             if (isDuplicate) {
-              // Skip duplicate but don't fail - Meta may retry
-              continue;
+              continue; // Meta may retry; skip duplicate without failing.
             }
 
             statusEvents.push({
@@ -159,7 +154,6 @@ export class WhatsAppWebhookService {
    * @param statusEvent - Processed status event
    */
   private async processStatusEvent(statusEvent: ProcessedWhatsAppStatus): Promise<void> {
-    // Store the webhook event
     await this.webhookEventLogRepository.create({
       source: WebhookSource.WHATSAPP,
       event: statusEvent.status,
@@ -178,35 +172,28 @@ export class WhatsAppWebhookService {
       },
     });
 
-    // Log status for monitoring
     this.logger.log(
       `[WhatsApp Webhook] Status: ${statusEvent.status} for message ${statusEvent.messageId}` +
       (statusEvent.trackingId ? ` (tracking: ${statusEvent.trackingId})` : ''),
     );
 
-    // Handle specific statuses
     switch (statusEvent.status) {
       case 'sent':
-        // Message sent to Meta's servers
         this.logger.debug(`[WhatsApp] Message ${statusEvent.messageId} sent`);
         break;
 
       case 'delivered':
-        // Message delivered to user's device
         this.logger.debug(`[WhatsApp] Message ${statusEvent.messageId} delivered`);
         break;
 
       case 'read':
-        // User read the message
         this.logger.debug(`[WhatsApp] Message ${statusEvent.messageId} read`);
         break;
 
       case 'failed':
-        // Message delivery failed
         this.logger.warn(
           `[WhatsApp] Message ${statusEvent.messageId} failed: ${JSON.stringify(statusEvent.errors)}`,
         );
-        // Could trigger retry logic or notify admin here
         break;
     }
   }

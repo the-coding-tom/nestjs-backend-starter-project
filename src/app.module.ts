@@ -45,9 +45,21 @@ import { SeedsModule } from './seeds/seeds.module';
         port: config.redisClusterPort,
       },
       defaultJobOptions: {
-        removeOnComplete: { count: config.jobOptions.complete.keepCount },
-        removeOnFail: { age: config.jobOptions.fail.keepCount },
+        removeOnComplete: {
+          age: config.jobOptions.complete.age,
+          count: config.jobOptions.complete.count,
+        },
+        removeOnFail: {
+          age: config.jobOptions.fail.age,
+          count: config.jobOptions.fail.count,
+        },
+        attempts: config.queue.jobRetryAttempts,
+        backoff: {
+          type: config.queue.backoffType,
+          delay: config.queue.jobRetryDelayMs,
+        },
       },
+      settings: config.bullSettings,
     }),
     // JWT Module
     JwtModule.register({

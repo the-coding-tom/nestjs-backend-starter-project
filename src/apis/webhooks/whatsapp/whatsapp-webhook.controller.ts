@@ -9,10 +9,11 @@ export class WhatsAppWebhookController {
   constructor(private readonly whatsappWebhookService: WhatsAppWebhookService) {}
 
   /**
-   * Webhook verification endpoint (GET)
-   * Meta sends this when configuring the webhook in App Dashboard
-   *
-   * Must return the challenge value as plain text/number (not JSON)
+   * Meta verification (GET); returns challenge as plain text.
+   * @param query - hub.mode, hub.verify_token, hub.challenge from Meta
+   * @param request - API request
+   * @param response - Express response (challenge sent as text)
+   * @returns Response sent via response (challenge string)
    */
   @Get()
   handleVerification(
@@ -21,15 +22,16 @@ export class WhatsAppWebhookController {
     @Res() response: Response,
   ) {
     const challenge = this.whatsappWebhookService.handleVerification(query, request);
-    // Must return challenge as plain text, not JSON
     response.status(200).send(String(challenge));
   }
 
   /**
-   * Webhook event notification endpoint (POST)
-   * Meta sends delivery status updates and messages here
-   *
-   * Requires raw body for signature verification
+   * Receives WhatsApp delivery/status events (POST); requires raw body for signature verification.
+   * @param body - Parsed webhook payload (fallback if rawBody missing)
+   * @param signature - x-hub-signature-256 header for verification
+   * @param request - Raw request (rawBody required for signature)
+   * @param response - Express response for status and body
+   * @returns Response sent via response (success or error)
    */
   @Post()
   async handleWebhook(
@@ -38,7 +40,6 @@ export class WhatsAppWebhookController {
     @Req() request: RawBodyRequest<Request> & ApiRequest,
     @Res() response: Response,
   ) {
-    // Get raw body for signature verification
     const rawBody = request.rawBody?.toString() || JSON.stringify(body);
 
     const result = await this.whatsappWebhookService.handleWebhook(

@@ -1,0 +1,162 @@
+---
+description: Guidelines for comments and documentation
+globs: "**/*.ts, **/*.tsx"
+alwaysApply: false
+---
+
+# Comments and Documentation
+
+## Comment the "Why", Not the "What"
+
+```ts
+// ❌ DON'T - states the obvious
+// Increment counter by 1
+counter += 1;
+
+// ❌ DON'T - describes the code
+// Loop through users and filter active ones
+const activeUsers = users.filter((u) => u.isActive);
+
+// ✅ DO - explain why
+// Using 15min buffer to account for clock drift between servers
+const tokenExpiry = Date.now() + (expiresIn - 900) * 1000;
+
+// ✅ DO - explain business logic
+// Users with 'legacy' plan get unlimited storage (grandfather clause)
+if (user.plan === 'legacy') {
+  return Infinity;
+}
+```
+
+## Use JSDoc for Public APIs
+
+**Controllers and service methods**: Every **public** controller route and every **public** service method MUST have a **full JSDoc block** (always, no exceptions): a short description plus `@param` for each parameter and `@returns` (and `@throws` when relevant). Do not use one-line `/** ... */` only—use the multi-line form with tags so params and return are documented.
+
+**Keep JSDoc in sync**: Whenever a controller or service method changes (new/removed/renamed parameters, different return type, or behavior change), update its JSDoc in the same change. Stale JSDoc is worse than none—treat JSDoc as part of the method’s contract.
+
+### Controller routes
+
+```ts
+// ❌ DON'T - one-liner only, no @param / @returns
+/** Login with email and password; returns tokens or requires MFA. */
+@Post('login')
+async login(@Body() dto: LoginDto, @Req() request: ApiRequest, @Res() res: Response) { ... }
+
+// ✅ DO - full JSDoc with @param and @returns
+/**
+ * Login with email and password; returns tokens or requires MFA.
+ * @param dto - Email and password
+ * @param request - API request (sets cookies for refresh token)
+ * @param res - Express response for status and body
+ * @returns Response sent via res (tokens or MFA required)
+ */
+@Post('login')
+async login(@Body() dto: LoginDto, @Req() request: ApiRequest, @Res() res: Response) { ... }
+```
+
+### Service methods
+
+```ts
+// ❌ DON'T - one-liner only
+/** Returns the current user's subscription with plan and billing info. */
+async getSubscription(userId: number, request: ApiRequest): Promise<any> { ... }
+
+// ✅ DO - full JSDoc with @param and @returns
+/**
+ * Returns the current user's subscription with plan and billing info.
+ * @param userId - User ID
+ * @param request - API request (language, etc.)
+ * @returns Subscription with plan and billing info, or null if none
+ */
+async getSubscription(userId: number, request: ApiRequest): Promise<any> { ... }
+
+/**
+ * Creates a Stripe checkout session for the given plan; returns checkout URL.
+ * @param userId - User ID
+ * @param dto - Plan ID and success/cancel URLs
+ * @param userEmail - Email for Stripe prefill
+ * @param request - API request
+ * @returns Object with checkout URL and session id
+ */
+async createCheckoutSession(userId: number, dto: CreateCheckoutSessionDto, userEmail: string, request: ApiRequest): Promise<any> { ... }
+```
+
+### Standalone / helper functions
+
+Same rule: use full JSDoc with description, `@param`, `@returns`, and `@throws` when applicable.
+
+```ts
+// ❌ DON'T - no documentation on public API
+export function calculatePrice(items, discount) {
+  // ...
+}
+
+// ✅ DO - full JSDoc
+/**
+ * Calculates the total price with discount applied.
+ * @param items - Cart items to calculate
+ * @param discount - Discount percentage (0-100)
+ * @returns Total price after discount
+ * @throws {InvalidDiscountError} If discount is out of range
+ */
+export function calculatePrice(
+  items: CartItem[],
+  discount: number
+): number {
+  // ...
+}
+```
+
+## Use TODO/FIXME with Context
+
+```ts
+// ❌ DON'T - vague TODO
+// TODO: fix this
+
+// ✅ DO - actionable with context
+// TODO(auth): Implement refresh token rotation - see SEC-123
+// FIXME: Race condition when user submits form twice quickly
+```
+
+## Avoid Commented-Out Code
+
+```ts
+// ❌ DON'T - leave dead code
+function getUsers() {
+  // const cached = cache.get('users');
+  // if (cached) return cached;
+  return fetchUsers();
+}
+
+// ✅ DO - delete unused code (use git history if needed)
+function getUsers() {
+  return fetchUsers();
+}
+```
+
+## Document Non-Obvious Behavior
+
+```ts
+// ✅ DO - document edge cases and constraints
+/**
+ * @remarks
+ * - Returns empty array if user has no permissions (not null)
+ * - Results are cached for 5 minutes
+ * - Max 100 items returned, use pagination for more
+ */
+export function getUserPermissions(userId: string): Permission[] {
+  // ...
+}
+```
+
+## Self-Documenting Code First
+
+```ts
+// ❌ DON'T - comment to clarify bad naming
+// Check if user can edit the document
+if (u.r === 2) { ... }
+
+// ✅ DO - use descriptive names
+const canEditDocument = user.role === UserRole.Editor;
+if (canEditDocument) { ... }
+```

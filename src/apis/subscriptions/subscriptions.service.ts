@@ -22,6 +22,9 @@ import { ApiRequest } from '../../common/types/request.types';
 import { BillingInterval, SubscriptionStatus } from '@prisma/client';
 import { UpdateSubscriptionData } from '../../repositories/entities/subscription.entity';
 
+/**
+ * Manages subscription lifecycle: checkout, plan changes, cancellation, portal, and invoices.
+ */
 @Injectable()
 export class SubscriptionsService {
   constructor(
@@ -31,6 +34,12 @@ export class SubscriptionsService {
     private readonly i18n: I18nService,
   ) {}
 
+  /**
+   * Get current user's subscription with plan and billing info.
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with subscription or error response
+   */
   async getSubscription(userId: number, request: ApiRequest): Promise<any> {
     try {
       const { subscription } = await this.subscriptionsValidator.validateGetSubscription(
@@ -71,7 +80,6 @@ export class SubscriptionsService {
         cancelUrl: validatedDto.cancelUrl,
       });
 
-      // Save checkout session to database with PENDING status
       await this.stripeCheckoutSessionRepository.create({
         stripeSessionId: session.id,
         userId,
@@ -96,6 +104,13 @@ export class SubscriptionsService {
     }
   }
 
+  /**
+   * Change subscription plan (upgrade or downgrade); proration applied for upgrades.
+   * @param userId - User ID
+   * @param dto - New plan ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with change details or error response
+   */
   async changePlan(
     userId: number,
     dto: ChangePlanDto,
@@ -132,6 +147,12 @@ export class SubscriptionsService {
     }
   }
 
+  /**
+   * Cancel subscription at period end (access until current period ends).
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with cancel info or error response
+   */
   async cancelSubscription(userId: number, request: ApiRequest): Promise<any> {
     try {
       const { subscription } = await this.subscriptionsValidator.validateCancelSubscription(
@@ -163,6 +184,7 @@ export class SubscriptionsService {
     }
   }
 
+  /** Get Stripe customer portal URL. */
   async getPortalSession(userId: number, request: ApiRequest): Promise<any> {
     try {
       const { subscription } = await this.subscriptionsValidator.validateGetPortalSession(
@@ -188,6 +210,12 @@ export class SubscriptionsService {
     }
   }
 
+  /**
+   * List recent Stripe invoices for user.
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with invoices array or error response
+   */
   async getInvoices(userId: number, request: ApiRequest): Promise<any> {
     try {
       const { subscription } = await this.subscriptionsValidator.validateGetInvoices(
@@ -218,6 +246,12 @@ export class SubscriptionsService {
     }
   }
 
+  /**
+   * Get subscription change history (plan changes, cancellations).
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with history array or error response
+   */
   async getSubscriptionHistory(userId: number, request: ApiRequest): Promise<any> {
     try {
       const { subscription } = await this.subscriptionsValidator.validateGetSubscriptionHistory(

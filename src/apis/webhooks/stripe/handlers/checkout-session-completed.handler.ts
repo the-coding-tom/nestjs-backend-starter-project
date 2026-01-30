@@ -9,6 +9,9 @@ import {
 import { CreateSubscriptionData, SubscriptionWithPlanEntity } from '../../../../repositories/entities/subscription.entity';
 import prisma from '../../../../common/prisma';
 
+/**
+ * After Stripe checkout completes: creates or updates subscription from session metadata, with history for plan changes.
+ */
 export async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session,
   subscriptionRepository: SubscriptionRepository,
@@ -65,7 +68,6 @@ export async function handleCheckoutSessionCompleted(
   const { currentPeriodStart, currentPeriodEnd } =
     getSubscriptionPeriodBounds(stripeSubscription);
 
-  // Get plan by slug
   const plan = await planRepository.findBySlug(planSlug);
   if (!plan) {
     console.error('[Stripe] Plan not found:', planSlug);
@@ -83,7 +85,6 @@ export async function handleCheckoutSessionCompleted(
   const newBillingInterval = billingInterval === 'YEARLY' ? BillingInterval.YEARLY : BillingInterval.MONTHLY;
 
   if (!subscription) {
-    // No existing subscription - create new one
     const subscriptionData: CreateSubscriptionData = {
       userId,
       planId: plan.id,
@@ -113,7 +114,6 @@ export async function handleCheckoutSessionCompleted(
         },
       });
 
-      // 2. Update subscription with new plan and Stripe details
       await tx.subscription.update({
         where: { id: subscription.id },
         data: {

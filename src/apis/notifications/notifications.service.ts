@@ -7,6 +7,9 @@ import { LoggerService } from '../../common/services/logger/logger.service';
 import { translate } from '../../helpers/i18n.helper';
 import { ApiRequest } from '../../common/types/request.types';
 
+/**
+ * Serves in-app notifications (inbox): list, pagination, and mark-as-read.
+ */
 @Injectable()
 export class NotificationsService {
   constructor(
@@ -15,6 +18,13 @@ export class NotificationsService {
     private readonly i18n: I18nService,
   ) {}
 
+  /**
+   * List in-app notifications with pagination and optional unread-only filter.
+   * @param userId - User ID
+   * @param query - Limit, offset, unreadOnly
+   * @param request - API request (language, etc.)
+   * @returns Success response with notifications and pagination or error response
+   */
   async getNotifications(
     userId: number,
     query: { limit?: number; offset?: number; unreadOnly?: boolean },
@@ -53,6 +63,13 @@ export class NotificationsService {
     }
   }
 
+  /**
+   * Mark a single notification as read.
+   * @param userId - User ID
+   * @param notificationId - Notification ID
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async markAsRead(userId: number, notificationId: number, request: ApiRequest): Promise<any> {
     try {
       await this.notificationsValidator.validateMarkAsRead({
@@ -75,6 +92,12 @@ export class NotificationsService {
     }
   }
 
+  /**
+   * Mark all notifications as read for user.
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async markAllAsRead(userId: number, request: ApiRequest): Promise<any> {
     try {
       await this.notificationsValidator.validateMarkAllAsRead({

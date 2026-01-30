@@ -79,6 +79,9 @@ interface GitHubEmail {
   verified: boolean;
 }
 
+/**
+ * Handles authentication: login, register, OAuth (Google/GitHub), password reset, email verification, and MFA (TOTP, backup codes).
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -95,16 +98,19 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
+  /**
+   * Login with email and password; returns tokens or requires MFA.
+   * @param loginDto - Email and password
+   * @param request - API request (language, user-agent, ip)
+   * @returns Success response with tokens or MFA required, or error response
+   */
   async login(loginDto: LoginDto, request: ApiRequest): Promise<any> {
     try {
       const { user } = await this.authValidator.validateLogin({ ...loginDto, language: request.language });
 
-      // Check if user has MFA enabled
       if (user.totpEnabled) {
-        // Generate session token for MFA verification
         const sessionToken = generateSessionToken();
 
-        // Store MFA verification session temporarily
         const sessionData: CreateMfaChallengeSessionData = {
           userId: user.id,
           email: user.email,
@@ -161,22 +167,24 @@ export class AuthService {
     }
   }
 
+  /**
+   * Register new user with workspace and subscription; sends verification email unless invited.
+   * @param registerDto - Email, password, name, optional plan/invitation
+   * @param request - API request (language, etc.)
+   * @returns Success response with user/tokens or error response
+   */
   async register(registerDto: RegisterDto, request: ApiRequest): Promise<any> {
     try {
       const { dto, invitedUser } = await this.authValidator.validateRegister({ ...registerDto, language: request.language });
 
-      // Hash the password
       const hashedPassword = await hashPassword(dto.password);
 
-      // Generate email verification token
       const emailVerificationToken = randomBytes(32).toString('hex');
       const emailVerificationExpiresAt = moment().add(24, 'hours').toDate();
 
-      // Create workspace name and slug
       const workspaceName = `${dto.name || dto.email.split('@')[0]}`;
       const baseSlug = generateSlug(workspaceName);
 
-      // Create user with workspace and subscription using repository transaction
       const onboardingData: CreateUserWithWorkspaceAndSubscriptionData = {
         email: dto.email,
         name: dto.name,
@@ -209,7 +217,6 @@ export class AuthService {
       } else {
         user = await this.userRepository.createUserWithWorkspaceAndSubscription(onboardingData);
 
-        // Send verification email only for new users (invited users are already verified)
         await this.emailService.sendEmailVerification(
           user.email,
           request.language,
@@ -233,6 +240,11 @@ export class AuthService {
     }
   }
 
+  /**
+   * Returns Google OAuth URL for client redirect.
+   * @param request - API request (language, etc.)
+   * @returns Success response with OAuth URL or error response
+   */
   async getGoogleOAuthUrl(request: ApiRequest): Promise<any> {
     try {
       const googleClient = new OAuth2Client(
@@ -262,6 +274,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * OAuth callback from Google; exchanges code for tokens and creates/links user.
+   * @param callbackDto - Code and state from Google
+   * @param request - API request (language, user-agent, ip)
+   * @returns Success response with tokens and user or error response
+   */
   async handleGoogleCallback(callbackDto: OAuthCallbackDto, request: ApiRequest): Promise<any> {
     try {
       const { dto } = await this.authValidator.validateOAuthCallback({ ...callbackDto, language: request.language });
@@ -283,7 +301,6 @@ export class AuthService {
 
       const oauthUserInfo = await this.verifyGoogleToken(tokens.access_token!);
 
-      // Find or create user
       let oauthAccount = await this.oauthAccountRepository.findByProviderAndProviderUserId(
         OAuthProvider.GOOGLE,
         oauthUserInfo.id,
@@ -356,10 +373,8 @@ export class AuthService {
         });
       }
 
-      // Generate tokens
       const { accessToken, refreshToken } = this.generateTokens(user);
 
-      // Create session
       await this.sessionRepository.createSession({
         userId: user.id,
         token: refreshToken,
@@ -394,6 +409,11 @@ export class AuthService {
     }
   }
 
+  /**
+   * Returns GitHub OAuth URL for client redirect.
+   * @param request - API request (language, etc.)
+   * @returns Success response with OAuth URL or error response
+   */
   async getGitHubOAuthUrl(request: ApiRequest): Promise<any> {
     try {
       const githubOAuthUrl = new URL(config.oauth.github.authUrl!);
@@ -415,6 +435,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * OAuth callback from GitHub; exchanges code for tokens and creates/links user.
+   * @param callbackDto - Code and state from GitHub
+   * @param request - API request (language, user-agent, ip)
+   * @returns Success response with tokens and user or error response
+   */
   async handleGitHubCallback(callbackDto: OAuthCallbackDto, request: ApiRequest): Promise<any> {
     try {
       const { dto } = await this.authValidator.validateOAuthCallback({ ...callbackDto, language: request.language });
@@ -442,7 +468,6 @@ export class AuthService {
 
       const oauthUserInfo = await this.verifyGitHubToken(tokenData.access_token);
 
-      // Find or create user
       let oauthAccount = await this.oauthAccountRepository.findByProviderAndProviderUserId(
         OAuthProvider.GITHUB,
         oauthUserInfo.id,
@@ -453,7 +478,6 @@ export class AuthService {
         user = await this.userRepository.findByEmail(oauthUserInfo.email);
 
         if (user) {
-          // Link existing user to OAuth provider
           await this.oauthAccountRepository.create({
             userId: user.id,
             provider: OAuthProvider.GITHUB,
@@ -498,16 +522,13 @@ export class AuthService {
           user = await this.userRepository.createOAuthUserWithWorkspaceAndSubscription(onboardingData);
         }
       } else {
-        // Update OAuth access token
         await this.oauthAccountRepository.update(oauthAccount!.id, {
           accessToken: tokenData.access_token,
         });
       }
 
-      // Generate tokens
       const { accessToken, refreshToken } = this.generateTokens(user);
 
-      // Create session
       await this.sessionRepository.createSession({
         userId: user.id,
         token: refreshToken,
@@ -542,6 +563,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Invalidate refresh token (logout).
+   * @param logoutDto - Refresh token to invalidate
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async logout(logoutDto: LogoutDto, request: ApiRequest): Promise<any> {
     try {
       await this.authValidator.validateLogout({ ...logoutDto, language: request.language });
@@ -556,17 +583,20 @@ export class AuthService {
     }
   }
 
+  /**
+   * Issue new access and refresh tokens from valid refresh token.
+   * @param refreshTokenDto - Refresh token
+   * @param request - API request (language, user-agent, ip)
+   * @returns Success response with new tokens or error response
+   */
   async refreshToken(refreshTokenDto: RefreshTokenDto, request: ApiRequest): Promise<any> {
     try {
       const { user } = await this.authValidator.validateRefreshToken({ ...refreshTokenDto, language: request.language });
 
-      // Revoke the old refresh token
       await this.sessionRepository.deleteSessionByRefreshToken(refreshTokenDto.refreshToken);
 
-      // Generate new tokens
       const { accessToken, refreshToken } = this.generateTokens(user);
 
-      // Create new session
       await this.sessionRepository.createSession({
         userId: user.id,
         token: refreshToken,
@@ -589,6 +619,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Request password reset; sends email with reset link if user exists (same response either way).
+   * @param resetPasswordRequestDto - Email
+   * @param request - API request (language, etc.)
+   * @returns Success response (same message whether user exists or not) or error response
+   */
   async requestPasswordReset(
     resetPasswordRequestDto: ResetPasswordRequestDto,
     request: ApiRequest,
@@ -599,18 +635,14 @@ export class AuthService {
         language: request.language,
       });
 
-      // Always return success to prevent email enumeration
       if (user) {
-        // Invalidate any existing password reset tokens
         await this.verificationRequestRepository.deleteByUserIdAndType(
           user.id,
           VerificationRequestType.PASSWORD_RESET,
         );
 
-        // Generate reset token
         const resetToken = uuidv4();
 
-        // Store reset token with expiration (1 hour)
         await this.verificationRequestRepository.create({
           userId: user.id,
           email: user.email,
@@ -628,6 +660,7 @@ export class AuthService {
         );
       }
 
+      // Same response whether user exists or not, to prevent email enumeration.
       return generateSuccessResponse({
         statusCode: HttpStatus.OK,
         message: translate(this.i18n, 'auth.password.reset.requested', request.language),
@@ -638,6 +671,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Set new password using token from reset email.
+   * @param resetPasswordConfirmDto - Token and new password
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async confirmPasswordReset(
     resetPasswordConfirmDto: ResetPasswordConfirmDto,
     request: ApiRequest,
@@ -649,17 +688,14 @@ export class AuthService {
           language: request.language,
         });
 
-      // Hash the new password
       const hashedPassword = await hashPassword(resetPasswordConfirmDto.newPassword);
 
-      // Update user password
       if (user.localAuthAccount) {
         await this.localAuthAccountRepository.updatePassword(user.id, hashedPassword);
       } else {
         await this.localAuthAccountRepository.create(user.id, hashedPassword);
       }
 
-      // Delete the verification token
       await this.verificationRequestRepository.deleteByToken(verificationRequest.token);
 
       return generateSuccessResponse({
@@ -672,6 +708,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Confirm email using token from verification link; activates user and sends welcome email.
+   * @param verifyEmailDto - Token from verification link
+   * @param request - API request (language, etc.)
+   * @returns Success response with email verified flag or error response
+   */
   async verifyEmail(verifyEmailDto: VerifyEmailDto, request: ApiRequest): Promise<any> {
     try {
       const { verificationRequest, user } = await this.authValidator.validateVerifyEmail({
@@ -679,16 +721,13 @@ export class AuthService {
         language: request.language,
       });
 
-      // Update user email verification status
       await this.userRepository.update(user.id, {
         emailVerifiedAt: new Date(),
         status: UserStatus.ACTIVE,
       });
 
-      // Delete the verification token
       await this.verificationRequestRepository.deleteByToken(verificationRequest.token);
 
-      // Send welcome email after successful verification
       await this.emailService.sendWelcome(
         user.email,
         request.language
@@ -708,6 +747,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Resend email verification link.
+   * @param resendVerificationDto - Email
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async resendVerification(resendVerificationDto: ResendVerificationDto, request: ApiRequest): Promise<any> {
     try {
       const { user } = await this.authValidator.validateResendVerification({
@@ -715,17 +760,14 @@ export class AuthService {
         language: request.language,
       });
 
-      // Delete any existing email verification tokens
       await this.verificationRequestRepository.deleteByUserIdAndType(
         user.id,
         VerificationRequestType.EMAIL_VERIFICATION,
       );
 
-      // Generate new verification token
       const verificationToken = randomBytes(32).toString('hex');
       const verificationExpiresAt = moment().add(24, 'hours').toDate();
 
-      // Create new verification request
       await this.verificationRequestRepository.create({
         userId: user.id,
         email: user.email,
@@ -755,6 +797,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Start TOTP setup; returns QR code and manual entry key.
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with qrCode and secret or error response
+   */
   async setupMfa(userId: number, request: ApiRequest): Promise<any> {
     try {
       const { user } = await this.authValidator.validateSetupMfa(userId, {
@@ -785,6 +833,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Confirm TOTP with code and enable MFA; returns backup codes (shown once).
+   * @param userId - User ID
+   * @param mfaVerifyDto - TOTP code
+   * @param request - API request (language, etc.)
+   * @returns Success response with backup codes or error response
+   */
   async verifyMfa(userId: number, mfaVerifyDto: MfaVerifyDto, request: ApiRequest): Promise<any> {
     try {
       await this.authValidator.validateMfaVerify(userId, {
@@ -816,6 +871,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Complete MFA challenge (TOTP or backup code) after login; returns tokens.
+   * @param mfaChallengeDto - MFA code (TOTP or backup code)
+   * @param request - API request (language, user-agent, ip)
+   * @returns Success response with tokens and user or error response
+   */
   async challengeMfa(mfaChallengeDto: MfaChallengeDto, request: ApiRequest): Promise<any> {
     try {
       const { user, session } = await this.authValidator.validateMfaChallenge({
@@ -860,6 +921,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Return count of remaining backup codes (codes themselves are not returned).
+   * @param userId - User ID
+   * @param request - API request (language, etc.)
+   * @returns Success response with remainingCount or error response
+   */
   async getBackupCodes(userId: number, request: ApiRequest): Promise<any> {
     try {
       await this.authValidator.validateGetBackupCodes(userId, {
@@ -869,9 +936,10 @@ export class AuthService {
       const backupCodes = await this.backupCodeRepository.findByUserId(userId);
       const unusedCodes = backupCodes.filter((code) => !code.used);
 
+      // Codes are stored as hashes and shown only once at generation; we never return them again.
       const response: BackupCodesResponseDto = {
         remainingCount: unusedCodes.length,
-        codes: [], // Cannot return codes - they are stored as hashes and only shown once when generated
+        codes: [],
       };
 
       return generateSuccessResponse({
@@ -885,6 +953,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Use a backup code to complete MFA challenge; returns tokens.
+   * @param mfaBackupCodeConsumeDto - Backup code
+   * @param request - API request (language, user-agent, ip)
+   * @returns Success response with tokens and user or error response
+   */
   async consumeBackupCode(mfaBackupCodeConsumeDto: MfaBackupCodeConsumeDto, request: ApiRequest): Promise<any> {
     try {
       const { user, session, matchingCode } = await this.authValidator.validateMfaBackupCodeConsume({
@@ -931,6 +1005,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Disable MFA for user (requires current TOTP or backup code).
+   * @param userId - User ID
+   * @param mfaDisableDto - TOTP code or backup code for verification
+   * @param request - API request (language, etc.)
+   * @returns Success response or error response
+   */
   async disableMfa(userId: number, mfaDisableDto: MfaDisableDto, request: ApiRequest): Promise<any> {
     try {
       await this.authValidator.validateMfaDisable(userId, {
@@ -955,6 +1036,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Generate new backup codes (invalidates previous ones); returns codes (shown once).
+   * @param userId - User ID
+   * @param mfaRegenerateBackupCodesDto - TOTP code for verification
+   * @param request - API request (language, etc.)
+   * @returns Success response with backup codes or error response
+   */
   async regenerateBackupCodes(
     userId: number,
     mfaRegenerateBackupCodesDto: MfaRegenerateBackupCodesDto,
@@ -1057,7 +1145,6 @@ export class AuthService {
    * Verify GitHub OAuth token and get user info
    */
   private async verifyGitHubToken(accessToken: string): Promise<OAuthUserInfo> {
-    // Get user info
     const userResponse = await fetch('https://api.github.com/user', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -1072,7 +1159,6 @@ export class AuthService {
 
     const userData = await userResponse.json();
 
-    // Get user's email addresses
     const emailResponse = await fetch('https://api.github.com/user/emails', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -1089,7 +1175,6 @@ export class AuthService {
 
     const emails: GitHubEmail[] = await emailResponse.json();
 
-    // Get primary verified email
     const primaryEmail = emails.find((email) => email.primary && email.verified);
 
     if (!primaryEmail) {
@@ -1119,14 +1204,12 @@ export class AuthService {
    * Set up TOTP for a user - generates secret and QR code
    */
   private async setupTotp(userEmail: string): Promise<TotpSetupResult> {
-    // Generate TOTP secret
     const secret = speakeasy.generateSecret({
       name: `${config.mfa.issuer}:${userEmail}`,
       issuer: config.mfa.issuer,
       length: 32,
     });
 
-    // Generate QR code
     const qrCode = await this.generateQrCode(secret.base32!, userEmail);
 
     return {

@@ -19,6 +19,9 @@ import { handleSubscriptionDeleted } from './handlers/subscription-deleted.handl
 import { handleInvoicePaymentSucceeded } from './handlers/invoice-payment-succeeded.handler';
 import { handleInvoicePaymentFailed } from './handlers/invoice-payment-failed.handler';
 
+/**
+ * Receives Stripe webhooks, verifies signature, logs events, and routes to handlers or queue for checkout session processing.
+ */
 @Injectable()
 export class StripeWebhookService {
   constructor(
@@ -29,9 +32,15 @@ export class StripeWebhookService {
     @InjectQueue(STRIPE_CHECKOUT_QUEUE) private readonly stripeCheckoutQueue: Queue,
   ) { }
 
+  /**
+   * Receives Stripe webhook events; verifies signature, logs events, routes to handlers or queue.
+   * @param rawBody - Raw request body (required for signature verification)
+   * @param signature - stripe-signature header
+   * @param language - Language for error messages (default 'en')
+   * @returns Success response with received flag or error response
+   */
   async handleWebhook(rawBody: Buffer, signature: string, language: string = 'en'): Promise<any> {
     try {
-      // Validate webhook request parameters, verify signature, and check for duplicates
       const { event } = await this.stripeWebhookValidator.validateWebhookEvent(
         rawBody,
         signature,
@@ -40,10 +49,8 @@ export class StripeWebhookService {
 
       console.log(`[Stripe Webhook] Received event: ${event.type}`);
 
-      // Get reference ID based on event type (subscription ID or customer ID)
       const referenceId = extractStripeReferenceId(event);
 
-      // Store the raw webhook event before processing
       await this.webhookEventLogRepository.create({
         source: WebhookSource.STRIPE,
         event: event.type,
@@ -54,12 +61,10 @@ export class StripeWebhookService {
 
       console.log(`[Stripe Webhook] Stored event: ${event.type} (${event.id})`);
 
-      // Route to appropriate handler
       switch (event.type) {
         case StripeEventType.CHECKOUT_SESSION_COMPLETED: {
           const session = event.data.object as Stripe.Checkout.Session;
 
-          // Extract Stripe IDs from session
           const stripeSubscriptionId =
             typeof session.subscription === 'string'
               ? session.subscription
@@ -70,7 +75,6 @@ export class StripeWebhookService {
               ? session.customer
               : session.customer?.id;
 
-          // Queue job instead of direct processing
           const jobData: StripeCheckoutJobData = {
             stripeSessionId: session.id,
             stripeCustomerId,

@@ -7,6 +7,13 @@ import { ApiRequest } from '../../../common/types/request.types';
 export class StripeWebhookController {
   constructor(private readonly stripeWebhookService: StripeWebhookService) {}
 
+  /**
+   * Receives Stripe webhook events; verifies signature and routes to handlers or queue.
+   * @param request - Raw request (rawBody required for signature verification)
+   * @param signature - stripe-signature header
+   * @param response - Express response for status and body
+   * @returns Response sent via response (success or error)
+   */
   @Post()
   async handleWebhook(
     @Req() request: RawBodyRequest<ApiRequest>,

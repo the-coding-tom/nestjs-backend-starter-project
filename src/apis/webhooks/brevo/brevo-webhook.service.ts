@@ -8,6 +8,9 @@ import { WebhookEventLogRepository } from '../../../repositories/webhook-event-l
 import { BrevoWebhookValidator } from './brevo-webhook.validator';
 import { ApiRequest } from '../../../common/types/request.types';
 
+/**
+ * Receives Brevo webhooks (email events), verifies token, logs events; used for delivery/opens tracking.
+ */
 @Injectable()
 export class BrevoWebhookService {
   constructor(
@@ -16,16 +19,21 @@ export class BrevoWebhookService {
     private readonly brevoWebhookValidator: BrevoWebhookValidator,
   ) { }
 
+  /**
+   * Receives Brevo email events; verifies token, logs events.
+   * @param body - Brevo webhook payload (events array)
+   * @param authorization - Bearer token for verification
+   * @param request - API request (language, etc.)
+   * @returns Success response with received flag or error response
+   */
   async handleWebhook(body: any, authorization: string, request: ApiRequest): Promise<any> {
     try {
-      // Validate webhook event structure, verify token, and check for duplicates
       const { event } = await this.brevoWebhookValidator.validateWebhookEvent(
         body,
         authorization,
         request.language,
       );
 
-      // Store the raw webhook event
       await this.webhookEventLogRepository.create({
         source: WebhookSource.BREVO,
         event: event.event,

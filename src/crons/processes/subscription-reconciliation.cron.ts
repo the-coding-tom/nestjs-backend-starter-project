@@ -7,11 +7,17 @@ import { STRIPE_CHECKOUT_QUEUE } from '../../common/constants/queues.constant';
 import { StripeCheckoutJobData } from '../../queues/processors/stripe-checkout.processor';
 import { retrieveCheckoutSession } from '../../common/services/stripe/stripe.service';
 
+/**
+ * Safety net when Stripe webhooks are missed: verifies PENDING checkout sessions with Stripe and queues paid ones for processing.
+ *
+ * @remarks Webhooks handle most completions; this cron catches sessions that never received a webhook.
+ */
 @Injectable()
 export class SubscriptionReconciliationCron {
   private readonly logger = new Logger(SubscriptionReconciliationCron.name);
 
-  private readonly STALE_SESSION_HOURS = 1; // Sessions older than 1 hour are checked
+  // Webhooks usually complete within minutes; 1h avoids re-checking too soon while catching missed webhooks.
+  private readonly STALE_SESSION_HOURS = 1;
 
   constructor(
     private readonly stripeCheckoutSessionRepository: StripeCheckoutSessionRepository,
@@ -19,19 +25,15 @@ export class SubscriptionReconciliationCron {
   ) {}
 
   /**
-   * Reconciliation job - runs every 6 hours
-   * Finds PENDING sessions older than 1 hour and verifies with Stripe
-   * This is a safety net - webhooks should handle most cases
+   * Finds PENDING sessions older than threshold, verifies with Stripe, and queues paid sessions for processing so subscriptions are not stuck.
    */
   @Cron(CronExpression.EVERY_6_HOURS)
   async handleReconciliation() {
     this.logger.log('[RECONCILIATION] Starting subscription reconciliation');
 
     try {
-      // Calculate cutoff time: sessions created before this time are considered stale
       const cutoffTime = new Date(Date.now() - this.STALE_SESSION_HOURS * 60 * 60 * 1000);
 
-      // Find stale PENDING sessions
       const staleSessions = await this.stripeCheckoutSessionRepository.findStalePendingSessions(
         cutoffTime,
       );
@@ -45,7 +47,6 @@ export class SubscriptionReconciliationCron {
 
       for (const session of staleSessions) {
         try {
-          // Verify with Stripe API
           const stripeSession = await retrieveCheckoutSession(session.stripeSessionId);
 
           if (!stripeSession) {
@@ -55,11 +56,9 @@ export class SubscriptionReconciliationCron {
             continue;
           }
 
-          // Check if payment was successful
           if (stripeSession.payment_status === 'paid') {
             paidCount++;
 
-            // Extract Stripe IDs
             const stripeSubscriptionId =
               typeof stripeSession.subscription === 'string'
                 ? stripeSession.subscription
@@ -70,7 +69,6 @@ export class SubscriptionReconciliationCron {
                 ? stripeSession.customer
                 : stripeSession.customer?.id;
 
-            // Queue for processing
             const jobData: StripeCheckoutJobData = {
               stripeSessionId: session.stripeSessionId,
               stripeCustomerId: stripeCustomerId || undefined,

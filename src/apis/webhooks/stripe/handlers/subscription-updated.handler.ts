@@ -7,6 +7,9 @@ import {
 } from '../../../../common/services/stripe/stripe.service';
 import prisma from '../../../../common/prisma';
 
+/**
+ * Syncs status and period bounds from Stripe subscription.updated; writes history before update.
+ */
 export async function handleSubscriptionUpdated(
   stripeSubscription: Stripe.Subscription,
   subscriptionRepository: SubscriptionRepository,
@@ -48,7 +51,6 @@ export async function handleSubscriptionUpdated(
       },
     });
 
-    // 2. Update subscription using transaction client
     await tx.subscription.update({
       where: { id: subscription.id },
       data: {

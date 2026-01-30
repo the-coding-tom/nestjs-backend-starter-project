@@ -2,6 +2,9 @@ import Stripe from 'stripe';
 import { SubscriptionRepository } from '../../../../repositories/subscription.repository';
 import { SubscriptionStatus } from '@prisma/client';
 
+/**
+ * Marks subscription as PAST_DUE when an invoice payment fails so we can surface billing issues.
+ */
 export async function handleInvoicePaymentFailed(
   invoice: Stripe.Invoice,
   subscriptionRepository: SubscriptionRepository,
@@ -28,7 +31,6 @@ export async function handleInvoicePaymentFailed(
     return;
   }
 
-  // Update subscription status to past_due
   await subscriptionRepository.updateStatus(subscription.id, SubscriptionStatus.PAST_DUE);
   console.log(`[Stripe] Subscription marked as past_due: ${subscription.id}`);
 }

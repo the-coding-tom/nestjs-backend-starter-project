@@ -8,6 +8,9 @@ import { translate } from '../../helpers/i18n.helper';
 import { ApiRequest } from '../../common/types/request.types';
 import { I18nService } from 'nestjs-i18n';
 
+/**
+ * Serves plan catalog (pricing, features) for subscription checkout and display.
+ */
 @Injectable()
 export class PlansService {
   constructor(
@@ -16,6 +19,12 @@ export class PlansService {
     private readonly i18n: I18nService,
   ) {}
 
+  /**
+   * List plans with optional filters.
+   * @param query - Optional filters (e.g. slug, active)
+   * @param request - API request (language, etc.)
+   * @returns Success response with plans array or error response
+   */
   async getAllPlans(query: GetPlansQueryDto, request: ApiRequest): Promise<any> {
     try {
       const { filters } = await this.plansValidator.validateGetPlansQuery({
@@ -36,6 +45,12 @@ export class PlansService {
     }
   }
 
+  /**
+   * Get plan by slug for checkout or display.
+   * @param slug - Plan slug
+   * @param request - API request (language, etc.)
+   * @returns Success response with plan or error response
+   */
   async getPlanBySlug(slug: string, request: ApiRequest): Promise<any> {
     try {
       const { plan } = await this.plansValidator.validateGetPlanBySlug(slug, request.language);

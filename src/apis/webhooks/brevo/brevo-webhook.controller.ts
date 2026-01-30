@@ -8,6 +8,14 @@ import { BrevoWebhookDto } from './dto/brevo-webhook.dto';
 export class BrevoWebhookController {
   constructor(private readonly brevoWebhookService: BrevoWebhookService) {}
 
+  /**
+   * Receives Brevo email events; verifies token and logs.
+   * @param body - Brevo webhook payload (events array)
+   * @param authorization - Bearer token for verification
+   * @param request - API request
+   * @param response - Express response for status and body
+   * @returns Response sent via response (success or error)
+   */
   @Post()
   async handleWebhook(
     @Body() body: BrevoWebhookDto,

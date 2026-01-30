@@ -86,14 +86,32 @@ export const config = {
   queue: {
     jobRetryAttempts: 3,
     jobRetryDelayMs: 5000,
+    backoffType: (process.env.QUEUE_BACKOFF_TYPE || 'exponential') as 'fixed' | 'exponential',
   },
   jobOptions: {
     complete: {
-      keepCount: 100, // Keep last 100 completed jobs
+      age: 3600, // Remove completed jobs older than 1 hour (seconds)
+      count: 1000, // Keep at most 1000 completed jobs
     },
     fail: {
-      keepCount: 1000, // Keep failed jobs for 1000 seconds (16.6 minutes)
+      age: 86400, // Remove failed jobs older than 24 hours (seconds)
+      count: 5000, // Keep at most 5000 failed jobs
     },
+  },
+  // Bull queue advanced settings (stalled job detection, locks)
+  bullSettings: {
+    stalledInterval: 30000, // Check for stalled jobs every 30s (ms)
+    maxStalledCount: 2, // Fail job after 2 stalls
+    lockDuration: 30000, // Lock jobs for 30s while processing (ms)
+  },
+
+  // Queue cleanup cron thresholds (prevents Redis memory bloat)
+  queueCleanup: {
+    completedCleanAgeMs: 3600 * 1000, // 1 hour – remove completed jobs older than this
+    failedCleanAgeMs: 24 * 3600 * 1000, // 24 hours – remove failed jobs older than this
+    stuckActiveAgeMs: 3600 * 1000, // 1 hour – treat active jobs older than this as stuck
+    redisMemoryWarnPercent: 70,
+    redisMemoryCriticalPercent: 80,
   },
 
   // Frontend URL (for redirects and email links)

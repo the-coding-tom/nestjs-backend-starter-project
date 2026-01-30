@@ -2,6 +2,9 @@ import Stripe from 'stripe';
 import { SubscriptionRepository } from '../../../../repositories/subscription.repository';
 import { SubscriptionStatus } from '@prisma/client';
 
+/**
+ * Marks our subscription as CANCELED when Stripe subscription is deleted.
+ */
 export async function handleSubscriptionDeleted(
   stripeSubscription: Stripe.Subscription,
   subscriptionRepository: SubscriptionRepository,

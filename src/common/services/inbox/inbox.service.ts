@@ -38,10 +38,8 @@ export class InboxService {
         category: NotificationCategory = NotificationCategory.USER,
     ): Promise<any> {
         try {
-            // Render notification content
             const { title, body } = renderInboxTemplate(template, language, variables);
 
-            // Create notification in database
             return await this.notificationRepository.create({
                 userId,
                 category,

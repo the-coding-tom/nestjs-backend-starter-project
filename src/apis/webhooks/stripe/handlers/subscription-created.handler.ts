@@ -6,6 +6,9 @@ import {
   retrieveSubscription,
 } from '../../../../common/services/stripe/stripe.service';
 
+/**
+ * Syncs period bounds from Stripe subscription.created to our subscription record.
+ */
 export async function handleSubscriptionCreated(
   stripeSubscription: Stripe.Subscription,
   subscriptionRepository: SubscriptionRepository,

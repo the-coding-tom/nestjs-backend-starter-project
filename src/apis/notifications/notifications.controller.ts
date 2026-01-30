@@ -7,6 +7,15 @@ import { ApiRequest } from '../../common/types/request.types';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  /**
+   * List in-app notifications with pagination and optional unread-only filter.
+   * @param request - API request (user context)
+   * @param response - Express response for status and body
+   * @param limit - Optional page size
+   * @param offset - Optional offset
+   * @param unreadOnly - If 'true', only unread notifications
+   * @returns Response sent via response (notifications array)
+   */
   @Get()
   async getNotifications(
     @Req() request: ApiRequest,
@@ -27,6 +36,13 @@ export class NotificationsController {
     response.status(status).json(restOfResponse);
   }
 
+  /**
+   * Mark a single notification as read.
+   * @param id - Notification ID
+   * @param request - API request (user context)
+   * @param response - Express response for status and body
+   * @returns Response sent via response (success or error)
+   */
   @Patch(':id/read')
   async markAsRead(
     @Param('id', ParseIntPipe) id: number,
@@ -41,6 +57,12 @@ export class NotificationsController {
     response.status(status).json(restOfResponse);
   }
 
+  /**
+   * Mark all notifications as read for current user.
+   * @param request - API request (user context)
+   * @param response - Express response for status and body
+   * @returns Response sent via response (success or error)
+   */
   @Patch('read-all')
   async markAllAsRead(@Req() request: ApiRequest, @Res() response: Response) {
     const { status, ...restOfResponse } = await this.notificationsService.markAllAsRead(
