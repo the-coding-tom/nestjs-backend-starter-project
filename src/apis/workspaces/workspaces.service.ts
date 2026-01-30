@@ -190,7 +190,13 @@ export class WorkspacesService {
     }
   }
 
-  /** List workspace members. */
+  /**
+   * List workspace members; caller must be a member of the workspace.
+   * @param workspaceId - Workspace ID
+   * @param userId - User ID (must be member)
+   * @param request - API request (language, etc.)
+   * @returns Success response with members array or error response
+   */
   async getWorkspaceMembers(workspaceId: number, userId: number, request: ApiRequest): Promise<any> {
     try {
       await this.workspacesValidator.validateGetWorkspace(workspaceId, userId, request.language);
@@ -287,7 +293,13 @@ export class WorkspacesService {
     }
   }
 
-  /** Accept invitation by token; adds user as member and deletes invitation. */
+  /**
+   * Accept invitation by token; adds user as member and deletes invitation.
+   * @param token - Invitation token from email or inbox
+   * @param userId - User ID (must match invitee)
+   * @param request - API request (language, etc.)
+   * @returns Success response with member details or error response
+   */
   async acceptInvitation(token: string, userId: number, request: ApiRequest): Promise<any> {
     try {
       const { invitation, user } = await this.workspacesValidator.validateAcceptInvitation(
