@@ -47,7 +47,7 @@ export class StripeWebhookService {
         language,
       );
 
-      console.log(`[Stripe Webhook] Received event: ${event.type}`);
+      LoggerService.info(`[Stripe Webhook] Received event: ${event.type}`);
 
       const referenceId = extractStripeReferenceId(event);
 
@@ -59,7 +59,7 @@ export class StripeWebhookService {
         payload: event.data.object as Record<string, any>,
       });
 
-      console.log(`[Stripe Webhook] Stored event: ${event.type} (${event.id})`);
+      LoggerService.info(`[Stripe Webhook] Stored event: ${event.type} (${event.id})`);
 
       switch (event.type) {
         case StripeEventType.CHECKOUT_SESSION_COMPLETED: {
@@ -92,7 +92,7 @@ export class StripeWebhookService {
             removeOnFail: false,
           });
 
-          console.log(`[Stripe Webhook] Queued checkout session ${session.id} for processing`);
+          LoggerService.info(`[Stripe Webhook] Queued checkout session ${session.id} for processing`);
           break;
         }
 
@@ -132,7 +132,7 @@ export class StripeWebhookService {
           break;
 
         default:
-          console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
+          LoggerService.info(`[Stripe Webhook] Unhandled event type: ${event.type}`);
       }
 
       return generateSuccessResponse({

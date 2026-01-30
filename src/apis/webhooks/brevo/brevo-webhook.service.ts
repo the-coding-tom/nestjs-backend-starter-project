@@ -42,7 +42,7 @@ export class BrevoWebhookService {
         payload: body,
       });
 
-      console.log(`[Brevo Webhook] Stored event: ${event.event}`);
+      LoggerService.info(`[Brevo Webhook] Stored event: ${event.event}`);
 
       return generateSuccessResponse({
         statusCode: HttpStatus.OK,
