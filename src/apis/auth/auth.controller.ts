@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Res, Get } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, Get, Patch } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { ApiRequest } from '../../common/types/request.types';
@@ -130,7 +130,7 @@ export class AuthController {
    * @param response - Express response for status and body
    * @returns Response sent via response (success or error)
    */
-  @Post('change-password')
+  @Patch('change-password')
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
     @Req() request: ApiRequest,
