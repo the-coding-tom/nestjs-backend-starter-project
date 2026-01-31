@@ -39,6 +39,7 @@ import {
   MfaBackupCodeConsumeDto,
   MfaDisableDto,
   MfaRegenerateBackupCodesDto,
+  ChangePasswordDto,
   TotpSetupResponseDto,
   TotpVerifySetupResponseDto,
   BackupCodesResponseDto,
@@ -714,6 +715,32 @@ export class AuthService {
       });
     } catch (error) {
       LoggerService.error(`Password reset confirmation failed: ${error}`);
+      return generateErrorResponse(error);
+    }
+  }
+
+  /**
+   * Change password for authenticated user with local auth account.
+   * @param changePasswordDto - Current and new password
+   * @param request - API request (user context from JWT)
+   * @returns Success response or error response
+   */
+  async changePassword(changePasswordDto: ChangePasswordDto, request: ApiRequest): Promise<any> {
+    try {
+      await this.authValidator.validateChangePassword(
+        { ...changePasswordDto, language: request.language },
+        request.user!.id,
+      );
+
+      const hashedPassword = await hashPassword(changePasswordDto.newPassword);
+      await this.localAuthAccountRepository.updatePassword(request.user!.id, hashedPassword);
+
+      return generateSuccessResponse({
+        statusCode: HttpStatus.OK,
+        message: translate(this.i18n, 'auth.password.changed', request.language),
+      });
+    } catch (error) {
+      LoggerService.error(`Change password failed: ${error}`);
       return generateErrorResponse(error);
     }
   }

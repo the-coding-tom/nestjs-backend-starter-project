@@ -150,6 +150,7 @@ export class AppModule implements NestModule {
         { path: 'workspaces/*path', method: RequestMethod.ALL },
         { path: 'profile', method: RequestMethod.GET },
         { path: 'profile', method: RequestMethod.PATCH },
+        { path: 'auth/change-password', method: RequestMethod.POST },
       );
   }
 }

@@ -74,6 +74,11 @@ export class ResetPasswordConfirmDto {
   newPassword: string;
 }
 
+export class ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
 // ============================================================================
 // OAuth
 // ============================================================================

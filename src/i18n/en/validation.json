@@ -100,6 +100,7 @@
   "requestBodyRequired": "Request body is required",
   "stripeSignatureRequired": "Stripe signature is required",
   "invalidWebhookSignature": "Invalid webhook signature",
-  "profileUpdateEmpty": "At least one field is required to update profile"
+  "profileUpdateEmpty": "At least one field is required to update profile",
+  "noLocalPassword": "This account was created with a social login. Password change is not available."
 }
 

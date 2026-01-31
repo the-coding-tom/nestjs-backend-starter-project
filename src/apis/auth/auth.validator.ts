@@ -31,6 +31,7 @@ import {
   MfaBackupCodeConsumeDto,
   MfaDisableDto,
   MfaRegenerateBackupCodesDto,
+  ChangePasswordDto,
 } from './dto/auth.dto';
 import { UserEntity, UserWithAuthEntity } from '../../repositories/entities/user.entity';
 import * as Joi from 'joi';
@@ -322,6 +323,58 @@ export class AuthValidator {
     }
 
     return { dto: data, verificationRequest, user };
+  }
+
+  async validateChangePassword(
+    data: ChangePasswordDto & { language: string },
+    userId: number,
+  ): Promise<{ dto: ChangePasswordDto }> {
+    const schema = Joi.object({
+      currentPassword: Joi.string().required().messages({
+        'any.required': translate(this.i18n, 'validation.password.required', data.language),
+      }),
+      newPassword: Joi.string().min(6).required().messages({
+        'string.min': translate(this.i18n, 'validation.passwordTooWeak', data.language),
+        'any.required': translate(this.i18n, 'validation.password.required', data.language),
+      }),
+      language: Joi.string()
+        .valid(...config.i18n.supportedLanguages)
+        .default(config.defaultLanguage)
+        .messages({
+          'any.only': translate(this.i18n, 'validation.language.invalid', data.language),
+        }),
+    });
+
+    const error = validateJoiSchema(schema, data);
+    if (error) throwError(error, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR);
+
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throwError(
+        translate(this.i18n, 'validation.userNotFound', data.language),
+        HttpStatus.NOT_FOUND,
+        ErrorCode.USER_NOT_FOUND,
+      );
+    }
+
+    if (!user.localAuthAccount) {
+      throwError(
+        translate(this.i18n, 'validation.noLocalPassword', data.language),
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    const isPasswordValid = await validatePassword(data.currentPassword, user.localAuthAccount.passwordHash);
+    if (!isPasswordValid) {
+      throwError(
+        translate(this.i18n, 'validation.invalidCredentials', data.language),
+        HttpStatus.UNAUTHORIZED,
+        ErrorCode.INVALID_CREDENTIALS,
+      );
+    }
+
+    return { dto: data };
   }
 
   async validateVerifyEmail(data: VerifyEmailDto & { language: string }): Promise<{ dto: VerifyEmailDto; verificationRequest: any; user: UserEntity }> {

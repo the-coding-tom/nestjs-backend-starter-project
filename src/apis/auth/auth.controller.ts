@@ -17,6 +17,7 @@ import {
   MfaBackupCodeConsumeDto,
   MfaDisableDto,
   MfaRegenerateBackupCodesDto,
+  ChangePasswordDto,
 } from './dto/auth.dto';
 
 @Controller('auth')
@@ -119,6 +120,23 @@ export class AuthController {
       resetPasswordConfirmDto,
       request,
     );
+    response.status(status).json(restOfResponse);
+  }
+
+  /**
+   * Change password for authenticated user (requires current password).
+   * @param changePasswordDto - Current and new password
+   * @param request - API request (user context from JWT)
+   * @param response - Express response for status and body
+   * @returns Response sent via response (success or error)
+   */
+  @Post('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() request: ApiRequest,
+    @Res() response: Response,
+  ) {
+    const { status, ...restOfResponse } = await this.authService.changePassword(changePasswordDto, request);
     response.status(status).json(restOfResponse);
   }
 

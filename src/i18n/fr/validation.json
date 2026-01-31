@@ -100,6 +100,7 @@
   "requestBodyRequired": "Le corps de la requête est requis",
   "stripeSignatureRequired": "La signature Stripe est requise",
   "invalidWebhookSignature": "Signature webhook invalide",
-  "profileUpdateEmpty": "Au moins un champ est requis pour mettre à jour le profil"
+  "profileUpdateEmpty": "Au moins un champ est requis pour mettre à jour le profil",
+  "noLocalPassword": "Ce compte a été créé via une connexion sociale. Le changement de mot de passe n'est pas disponible."
 }
 
