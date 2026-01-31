@@ -99,6 +99,7 @@
   "eventTimestampRequired": "Event timestamp is required",
   "requestBodyRequired": "Request body is required",
   "stripeSignatureRequired": "Stripe signature is required",
-  "invalidWebhookSignature": "Invalid webhook signature"
+  "invalidWebhookSignature": "Invalid webhook signature",
+  "profileUpdateEmpty": "At least one field is required to update profile"
 }
 

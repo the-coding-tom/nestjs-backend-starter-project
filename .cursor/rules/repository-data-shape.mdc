@@ -1,0 +1,68 @@
+---
+description: Return API response shape from repository - raw SQL, no service mapping, Prisma update behavior
+globs: src/repositories/**/*.ts, src/apis/**/*.service.ts
+alwaysApply: false
+---
+
+# Repository Data Shape
+
+## Return the shape you need from the repository
+
+Prefer raw SQL or targeted Prisma queries that return the exact API response shape. Avoid service-layer mapping when the database can return the right shape directly.
+
+```typescript
+// GOOD - Repository returns profile shape with raw SQL (aliases, computed fields)
+async findProfileById(id: number): Promise<ProfileEntity | null> {
+  const [profile] = await prisma.$queryRaw<ProfileEntity[]>`
+    SELECT
+      id, email, name,
+      first_name as "firstName",
+      last_name as "lastName",
+      (email_verified_at IS NOT NULL) as "isEmailVerified",
+      totp_enabled as "mfaEnabled",
+      created_at as "createdAt"
+    FROM users WHERE id = ${id}
+  `;
+  return profile ?? null;
+}
+
+// BAD - Fetch full entity then map in service
+const user = await this.userRepository.findById(id);
+return {
+  id: user.id,
+  mfaEnabled: user.totpEnabled,
+  isEmailVerified: !!user.emailVerifiedAt,
+  // ...
+};
+```
+
+## Update + fetch in one transaction
+
+When updating and then returning a custom response shape, do both inside a single transaction. Update, then run raw SQL to fetch the shape, return it directly.
+
+```typescript
+// GOOD - Update + fetch in transaction, return as-is
+async updateAndFindProfile(id: number, data: UpdateUserData): Promise<ProfileEntity> {
+  return prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id }, data });
+    const [profile] = await tx.$queryRaw<ProfileEntity[]>`SELECT ... WHERE id = ${id}`;
+    return profile!;
+  });
+}
+```
+
+## Prisma ignores undefined on update
+
+Do not use conditional spread when building update payloads. Pass the DTO directly; Prisma ignores undefined fields.
+
+```typescript
+// BAD - Unnecessary conditional spread
+const updateData = {
+  ...(dto.name !== undefined && { name: dto.name }),
+  ...(dto.firstName !== undefined && { firstName: dto.firstName }),
+};
+await repo.update(id, updateData);
+
+// GOOD - Pass DTO directly
+await repo.update(id, dto);
+```

@@ -99,6 +99,7 @@
   "eventTimestampRequired": "L'horodatage de l'événement est requis",
   "requestBodyRequired": "Le corps de la requête est requis",
   "stripeSignatureRequired": "La signature Stripe est requise",
-  "invalidWebhookSignature": "Signature webhook invalide"
+  "invalidWebhookSignature": "Signature webhook invalide",
+  "profileUpdateEmpty": "Au moins un champ est requis pour mettre à jour le profil"
 }
 

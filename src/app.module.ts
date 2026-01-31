@@ -13,6 +13,7 @@ import { WhatsAppWebhookModule } from './apis/webhooks/whatsapp/whatsapp-webhook
 import { WorkspacesModule } from './apis/workspaces/workspaces.module';
 import { DevicesModule } from './apis/devices/devices.module';
 import { NotificationsModule } from './apis/notifications/notifications.module';
+import { ProfileModule } from './apis/profile/profile.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LanguageMiddleware } from './common/middlewares/language.middleware';
@@ -87,6 +88,7 @@ import { SeedsModule } from './seeds/seeds.module';
     WorkspacesModule,
     DevicesModule,
     NotificationsModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [
@@ -146,7 +148,8 @@ export class AppModule implements NestModule {
       .forRoutes(
         { path: 'auth/logout', method: RequestMethod.POST },
         { path: 'workspaces/*path', method: RequestMethod.ALL },
-        // TODO: Add more user-scoped routes here
+        { path: 'profile', method: RequestMethod.GET },
+        { path: 'profile', method: RequestMethod.PATCH },
       );
   }
 }

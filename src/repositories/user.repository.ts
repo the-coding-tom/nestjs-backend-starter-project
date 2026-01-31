@@ -8,6 +8,7 @@ import {
   UserWithAuthEntity,
   UserWithLocalAuthEntity,
   UserWithOAuthEntity,
+  ProfileEntity,
 } from './entities/user.entity';
 import {
   CreateUserWithWorkspaceAndSubscriptionData,
@@ -83,6 +84,31 @@ export class UserRepository {
     });
   }
 
+  /**
+   * Fetch profile fields for a user by ID (raw SQL, no relations).
+   * Returns shape ready for profile API response.
+   */
+  async findProfileById(id: number): Promise<ProfileEntity | null> {
+    const [profile] = await prisma.$queryRaw<ProfileEntity[]>`
+      SELECT
+        id,
+        email,
+        name,
+        first_name as "firstName",
+        last_name as "lastName",
+        photo_url as "photoUrl",
+        timezone,
+        language,
+        (email_verified_at IS NOT NULL) as "isEmailVerified",
+        status::text as "status",
+        totp_enabled as "mfaEnabled",
+        created_at as "createdAt"
+      FROM users
+      WHERE id = ${id}
+    `;
+    return profile ?? null;
+  }
+
   async update(id: number, data: UpdateUserData): Promise<UserWithLocalAuthEntity> {
     return prisma.user.update({
       where: { id },
@@ -90,6 +116,38 @@ export class UserRepository {
       include: {
         localAuthAccount: true,
       },
+    });
+  }
+
+  /**
+   * Update user and return profile in one transaction (update + raw SQL fetch).
+   */
+  async updateAndFindProfile(id: number, data: UpdateUserData): Promise<ProfileEntity> {
+    return prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data,
+      });
+
+      const [profile] = await tx.$queryRaw<ProfileEntity[]>`
+        SELECT
+          id,
+          email,
+          name,
+          first_name as "firstName",
+          last_name as "lastName",
+          photo_url as "photoUrl",
+          timezone,
+          language,
+          (email_verified_at IS NOT NULL) as "isEmailVerified",
+          status::text as "status",
+          totp_enabled as "mfaEnabled",
+          created_at as "createdAt"
+        FROM users
+        WHERE id = ${id}
+      `;
+
+      return profile!;
     });
   }
 

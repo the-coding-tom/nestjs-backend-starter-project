@@ -87,3 +87,19 @@ export interface UserWithAuthEntity extends UserEntity {
   oauthAccounts: OAuthAccountEntity[];
 }
 
+/** Profile shape returned by findProfileById raw SQL (no relations, camelCase, ready for API response) */
+export interface ProfileEntity {
+  id: number;
+  email: string;
+  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  photoUrl: string | null;
+  timezone: string;
+  language: string;
+  isEmailVerified: boolean;
+  status: string;
+  mfaEnabled: boolean;
+  createdAt: Date;
+}
+
